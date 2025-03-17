@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drift Race 3D</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        #welcome-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            color: white;
+            text-align: center;
+        }
+        
+        #welcome-screen h1 {
+            color: #FF5722;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 10px rgba(255, 87, 34, 0.7);
+        }
+        
+        .welcome-section {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .welcome-section h2 {
+            color: #FFC107;
+            margin-bottom: 15px;
+        }
+        
+        #name-input {
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            margin: 10px 0;
+            width: 80%;
+            font-size: 1rem;
+        }
+        
+        #start-game-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        
+        #start-game-btn:hover {
+            background-color: #45a049;
+        }
+        
+        #sponsor-btn {
+            background-color: #FFC107;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        
+        #sponsor-btn:hover {
+            background-color: #FFB300;
+        }
+
+        #shop-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        display: flex;
+        flex-direction: column;
+        z-index: 2000;
+        color: white;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .shop-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+    
+    .shop-header h2 {
+        color: #FFC107;
+        margin: 0;
+    }
+    
+    .shop-coins {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: gold;
+        font-weight: bold;
+    }
+    
+    #shop-close-btn {
+        background-color: #f44336;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    .shop-items {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    
+    .car-item {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 15px;
+        width: 250px;
+        transition: transform 0.3s;
+    }
+    
+    .car-item:hover {
+        transform: scale(1.05);
+    }
+    
+    .car-preview {
+        height: 150px;
+        margin-bottom: 10px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+    
+    .default-car {
+        background-image: url('assets/car-red.png');
+    }
+    
+    .beetle-car {
+        background-image: url('assets/car-yellow.png');
+    }
+    
+    .lambo-car {
+        background-image: url('assets/car-orange.png');
+    }
+    
+    .car-item h3 {
+        color: #FFC107;
+        margin: 10px 0;
+    }
+    
+    .car-item p {
+        margin: 5px 0 15px 0;
+    }
+    
+    .buy-car-btn, .select-car-btn {
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        width: 100%;
+    }
+    
+    .buy-car-btn {
+        background-color: #4CAF50;
+        color: white;
+    }
+    
+    .buy-car-btn:disabled {
+        background-color: #cccccc;
+        color: #666666;
+        cursor: not-allowed;
+    }
+    
+    .select-car-btn {
+        background-color: #2196F3;
+        color: white;
+    }
+    
+    .select-car-btn.selected {
+        background-color: #FFC107;
+        color: black;
+    }
+    </style>
+</head>
+<body>
+    <div id="welcome-screen">
+        <h1>Drift Race 3D</h1>
+        
+        <div class="welcome-section">
+            <h2>Bem-vindo ao Jogo!</h2>
+            <p>Digite seu nome para começar a corrida:</p>
+            <input type="text" id="name-input" placeholder="Seu nome">
+            <button id="start-game-btn">Iniciar Jogo</button>
+        </div>
+        
+        <div class="welcome-section">
+            <h2>Patrocine este Jogo</h2>
+            <p>Quer que sua marca apareça no jogo? Patrocine-nos e tenha visibilidade para milhares de jogadores!</p>
+            <button id="sponsor-btn">Quero Patrocinar - R$99,00</button>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <div id="stats">
+            Tempo: <span id="time">0</span>s | 
+            Moedas: <span id="coins">0</span> | 
+            Curvas: <span id="turns">0</span> | 
+            Obstáculos: <span id="obstacles">0</span>
+        </div>
+        
+        <div id="game-over">
+            <h2>GAME OVER</h2>
+            <p>⏳ Tempo total: <span id="total-time">0</span>s</p>
+            <p>💰 Moedas coletadas: <span id="total-coins">0</span></p>
+            <p>➰ Curvas feitas: <span id="total-turns">0</span></p>
+            <p>🚧 Obstáculos desviados: <span id="total-obstacles">0</span></p>
+            <!-- Adicionar no game-over -->
+             <button id="restart-button">Recomeçar</button>
+            <button id="open-shop-btn" style="margin-top: 10px; background-color: #FFC107; color: black; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Loja de Carros</button>
+        </div>
+
+        <!-- Adicionar após o div game-over -->
+        <div id="shop-screen" style="display: none;">
+            <div class="shop-header">
+                <h2>LOJA DE CARROS</h2>
+                <div class="shop-coins">
+                    <span>💰</span>
+                    <span id="shop-coins-value">0</span>
+                </div>
+                <button id="shop-close-btn">X</button>
+            </div>
+            
+            <div class="shop-items">
+                <div class="car-item" data-car="default">
+                    <div class="car-preview default-car"></div>
+                    <h3>Carro Padrão</h3>
+                    <p>Seu carro atual</p>
+                    <button class="select-car-btn" data-car="default">Selecionado</button>
+                </div>
+                
+                <div class="car-item" data-car="beetle">
+                    <div class="car-preview beetle-car"></div>
+                    <h3>Fusca Amarelo</h3>
+                    <p>Preço: 150 moedas</p>
+                    <button class="buy-car-btn" data-car="beetle" data-price="150">Comprar</button>
+                </div>
+                
+                <div class="car-item" data-car="lambo">
+                    <div class="car-preview lambo-car"></div>
+                    <h3>Lamborghini Laranja</h3>
+                    <p>Preço: 900 moedas</p>
+                    <button class="buy-car-btn" data-car="lambo" data-price="900">Comprar</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls-info">
+            Controles: Setas ← → ou deslize na tela
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/car.js"></script>
+    <script src="js/track.js"></script>
+    <script src="js/obstacle.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

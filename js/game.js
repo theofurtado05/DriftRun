@@ -1,0 +1,355 @@
+// Classe principal do jogo
+class Game {
+    constructor(carType = 'default') {
+        // Inicializar elementos do Three.js
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+        this.clock = new THREE.Clock();
+        
+        // Elementos do jogo
+    this.carType = carType;
+    this.car = null;
+    this.track = null;
+    this.obstacleManager = null;
+        
+        // Estado do jogo
+        this.gameActive = false;
+        this.elapsedTime = 0;
+        this.coins = 0;
+        this.nextCoinTime = CONFIG.game.coinInterval;
+        this.inputDirection = 0;
+        
+        // Event Handlers
+        this.keyDownHandler = this.handleKeyDown.bind(this);
+        this.keyUpHandler = this.handleKeyUp.bind(this);
+        this.touchStartHandler = this.handleTouchStart.bind(this);
+        this.touchMoveHandler = this.handleTouchMove.bind(this);
+        this.resizeHandler = this.handleResize.bind(this);
+        
+        // Inicializar
+        this.init();
+        this.setupEventListeners();
+    }
+    
+    init() {
+        // Inicializar cena
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(CONFIG.colors.sky);
+        
+        // Inicializar câmera
+        this.camera = new THREE.PerspectiveCamera(
+            CONFIG.camera.fov,
+            window.innerWidth / window.innerHeight,
+            CONFIG.camera.near,
+            CONFIG.camera.far
+        );
+        this.camera.position.set(
+            CONFIG.camera.position.x,
+            CONFIG.camera.position.y,
+            CONFIG.camera.position.z
+        );
+        this.camera.lookAt(
+            CONFIG.camera.lookAt.x,
+            CONFIG.camera.lookAt.y,
+            CONFIG.camera.lookAt.z
+        );
+        
+        // Inicializar renderer
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.shadowMap.enabled = true;
+        document.getElementById('game-container').appendChild(this.renderer.domElement);
+        
+        // Adicionar luzes
+        this.setupLights();
+        
+        // Inicializar elementos do jogo
+        // Inicializar carro
+        this.car = new Car(this.scene, this.carType);
+        this.track = new Track(this.scene);
+        this.obstacleManager = new ObstacleManager(this.scene);
+
+        // Configurar botão da loja
+    document.getElementById('open-shop-btn').addEventListener('click', () => {
+        document.getElementById('game-over').style.display = 'none';
+        openShop();
+    });
+        
+        // Resetar stats
+        this.resetStats();
+        
+        // Iniciar o jogo
+        this.start();
+    }
+
+    // Adicionar método para atualizar o modelo do carro
+updateCarModel(carType) {
+    // Salvar a posição e velocidade atuais
+    const position = this.car ? { ...this.car.position } : { x: 0, y: 0, z: 0 };
+    const speed = this.car ? this.car.speed : CONFIG.car.speed;
+    
+    // Remover o carro atual da cena
+    if (this.car && this.car.mesh) {
+        this.scene.remove(this.car.mesh);
+    }
+    
+    // Criar novo carro com o tipo selecionado
+    this.car = new Car(this.scene, carType);
+    
+    // Restaurar posição e velocidade
+    this.car.position = position;
+    this.car.speed = speed;
+    this.car.mesh.position.x = position.x;
+    this.car.mesh.position.z = position.z;
+}
+    
+    setupLights() {
+        // Luz ambiente
+        const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.5);
+        this.scene.add(ambientLight);
+        
+        // Luz direcional (sol)
+        const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 0.8);
+        directionalLight.position.set(100, 100, 50);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 1024;
+        directionalLight.shadow.mapSize.height = 1024;
+        directionalLight.shadow.camera.far = 500;
+        directionalLight.shadow.camera.left = -100;
+        directionalLight.shadow.camera.right = 100;
+        directionalLight.shadow.camera.top = 100;
+        directionalLight.shadow.camera.bottom = -100;
+        this.scene.add(directionalLight);
+    }
+    
+    setupEventListeners() {
+        // Event listeners para teclado
+        window.addEventListener('keydown', this.keyDownHandler);
+        window.addEventListener('keyup', this.keyUpHandler);
+        
+        // Event listeners para touch
+        window.addEventListener('touchstart', this.touchStartHandler);
+        window.addEventListener('touchmove', this.touchMoveHandler);
+        
+        // Event listener para redimensionamento da janela
+        window.addEventListener('resize', this.resizeHandler);
+        
+        // Event listener para botão de reinício
+        document.getElementById('restart-button').addEventListener('click', () => this.restart());
+    }
+    
+    removeEventListeners() {
+        window.removeEventListener('keydown', this.keyDownHandler);
+        window.removeEventListener('keyup', this.keyUpHandler);
+        window.removeEventListener('touchstart', this.touchStartHandler);
+        window.removeEventListener('touchmove', this.touchMoveHandler);
+        window.removeEventListener('resize', this.resizeHandler);
+    }
+    
+    handleKeyDown(event) {
+        if (event.key === 'ArrowLeft') {
+            this.inputDirection = -1;
+        } else if (event.key === 'ArrowRight') {
+            this.inputDirection = 1;
+        }
+    }
+    
+    handleKeyUp(event) {
+        if (event.key === 'ArrowLeft' && this.inputDirection === -1) {
+            this.inputDirection = 0;
+        } else if (event.key === 'ArrowRight' && this.inputDirection === 1) {
+            this.inputDirection = 0;
+        }
+    }
+    
+    handleTouchStart(event) {
+        event.preventDefault();
+        if (event.touches.length > 0) {
+            this.lastTouchX = event.touches[0].clientX;
+        }
+    }
+    
+    handleTouchMove(event) {
+        event.preventDefault();
+        if (event.touches.length > 0) {
+            const touchX = event.touches[0].clientX;
+            const diffX = touchX - this.lastTouchX;
+            
+            if (diffX > 5) {
+                this.inputDirection = 1;
+            } else if (diffX < -5) {
+                this.inputDirection = -1;
+            } else {
+                this.inputDirection = 0;
+            }
+            
+            this.lastTouchX = touchX;
+        }
+    }
+    
+    handleResize() {
+        // Atualizar câmera e renderer quando a janela for redimensionada
+        this.camera.aspect = window.innerWidth / window.innerHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    
+    start() {
+        this.gameActive = true;
+        this.animate();
+    }
+    
+    stop() {
+        this.gameActive = false;
+        this.showGameOver();
+    }
+    
+    restart() {
+        // Esconder game over
+        document.getElementById('game-over').style.display = 'none';
+        
+        // Resetar elementos do jogo
+        this.car.reset();
+        this.track.reset();
+        this.obstacleManager.reset();
+        
+        // Resetar stats
+        this.resetStats();
+        
+        // Reiniciar o jogo
+        this.start();
+    }
+    
+    resetStats() {
+        this.elapsedTime = 0;
+        this.coins = 0;
+        this.nextCoinTime = CONFIG.game.coinInterval;
+        
+        // Atualizar UI
+        document.getElementById('time').textContent = '0';
+        document.getElementById('coins').textContent = '0';
+        document.getElementById('turns').textContent = '0';
+        document.getElementById('obstacles').textContent = '0';
+    }
+    
+    showGameOver() {
+        // Atualizar estatísticas finais
+        document.getElementById('total-time').textContent = Math.floor(this.elapsedTime);
+        document.getElementById('total-coins').textContent = this.coins;
+        document.getElementById('total-turns').textContent = this.track.getTurnCount();
+        document.getElementById('total-obstacles').textContent = this.obstacleManager.getAvoidedCount();
+        
+        // Adicionar moedas coletadas ao total
+        addCoins(this.coins);
+        
+        // Mostrar modal de game over
+        document.getElementById('game-over').style.display = 'block';
+        
+        // Verificar se o botão da loja já existe
+        if (!document.getElementById('open-shop-btn')) {
+            // Adicionar botão para abrir a loja
+            const shopButton = document.createElement('button');
+            shopButton.id = 'open-shop-btn';
+            shopButton.textContent = 'Loja de Carros';
+            shopButton.style.marginTop = '10px';
+            shopButton.style.backgroundColor = '#FFC107';
+            shopButton.style.color = 'black';
+            shopButton.style.border = 'none';
+            shopButton.style.padding = '10px 20px';
+            shopButton.style.borderRadius = '5px';
+            shopButton.style.cursor = 'pointer';
+            
+            // Adicionar evento de clique para abrir a loja
+            shopButton.addEventListener('click', () => {
+                document.getElementById('game-over').style.display = 'none';
+                openShop();
+            });
+            
+            // Adicionar botão ao modal de game over
+            document.getElementById('game-over').appendChild(shopButton);
+        }
+
+        // Parar o carro
+        this.car.speed = 0;
+    }
+    
+    update(deltaTime) {
+        if (!this.gameActive) return;
+    
+        // Atualizar tempo e moedas
+        this.elapsedTime += deltaTime;
+        document.getElementById('time').textContent = Math.floor(this.elapsedTime);
+        
+        // Verificar se é hora de adicionar moeda
+        if (this.elapsedTime >= this.nextCoinTime) {
+            this.coins++;
+            this.nextCoinTime += CONFIG.game.coinInterval;
+            document.getElementById('coins').textContent = this.coins;
+        }
+
+        // Verificar se o carro saiu da pista
+        if (this.car.isOffTrack(this.track)) {
+            this.stop();
+            return; // Importante: retornar imediatamente para não continuar a atualização
+        }
+        
+        // Atualizar contador de curvas
+        document.getElementById('turns').textContent = this.track.getTurnCount();
+        
+        // Atualizar contador de obstáculos
+        document.getElementById('obstacles').textContent = this.obstacleManager.getAvoidedCount();
+        
+        // Atualizar carro
+        this.car.update(deltaTime, this.inputDirection);
+        
+        // Aumentar dificuldade gradualmente com base na pontuação
+        this.car.increaseDifficulty(this.obstacleManager.getAvoidedCount());
+        
+        // Atualizar câmera para seguir o carro
+        this.camera.position.z = this.car.position.z - 10;
+        this.camera.lookAt(
+            this.car.position.x,
+            this.car.position.y,
+            this.car.position.z + 10
+        );
+        
+        // Atualizar pista gerando novos segmentos conforme necessário
+        this.track.update(this.car.position);
+        
+        // Atualizar obstáculos
+        this.obstacleManager.update(deltaTime, this.car.position);
+        
+        // Verificar colisões com obstáculos
+        if (this.obstacleManager.checkCollisions(this.car.position)) {
+            this.stop();
+            return; // Importante: retornar imediatamente para não continuar a atualização
+        }
+    }
+    
+    animate() {
+        if (!this.gameActive) return;
+        
+        const deltaTime = this.clock.getDelta();
+        
+        // Atualizar lógica do jogo
+        this.update(deltaTime);
+        
+        // Renderizar cena
+        this.renderer.render(this.scene, this.camera);
+        
+        // Chamar próximo frame
+        requestAnimationFrame(() => this.animate());
+    }
+    
+    cleanup() {
+        // Remover event listeners
+        this.removeEventListeners();
+        
+        // Remover renderer
+        this.renderer.dispose();
+        document.getElementById('game-container').removeChild(this.renderer.domElement);
+    }
+
+    
+}
