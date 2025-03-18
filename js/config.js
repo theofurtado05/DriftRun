@@ -25,7 +25,7 @@ const CONFIG = {
     
     // Configurações do jogo
     game: {
-        coinInterval: 5, // segundos entre grupos de moedas
+        coinInterval: 2, // segundos entre grupos de moedas
         coinValue: 1,    // valor de cada moeda
         difficultyIncrease: 0.01, // Aumento base de velocidade por frame
         initialObstacleInterval: 2.5,  // segundos
