@@ -12,6 +12,10 @@ class Track {
         this.landscapeElements = [];
         this.landscapePool = []; // Pool de objetos reutilizáveis
         
+        // Armazenar a última posição do carro para cálculos relativos
+        this.lastCarPosition = { x: 0, z: 0 };
+    
+
         // Inicializar a paisagem
         this.initializeLandscape();
 
@@ -64,17 +68,10 @@ class Track {
     }
 
     // Adicionar método para inicializar a paisagem
+// Modificar o método initializeLandscape na classe Track
 initializeLandscape() {
-    // Criar o chão (grama)
-    const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
-    const groundMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0x4CAF50, // Verde para grama
-        side: THREE.DoubleSide
-    });
-    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-    ground.rotation.x = Math.PI / 2;
-    ground.position.y = -0.5;
-    this.scene.add(ground);
+    // Criar o chão (grama) de forma mais simples
+    this.createSimpleGround();
     
     // Criar montanhas ao fundo
     this.createMountains();
@@ -83,42 +80,178 @@ initializeLandscape() {
     this.populateLandscape();
 }
 
-// Método para criar montanhas ao fundo
-createMountains() {
-    // Criar montanhas distantes (fundo estático)
-    const mountainGeometry = new THREE.BufferGeometry();
-    const vertices = [];
-    const mountainColors = [];
-    
-    // Gerar pontos para as montanhas
-    for (let i = 0; i < 20; i++) {
-        const x = -500 + i * 50;
-        const height = 30 + Math.random() * 70;
-        
-        // Ponto base esquerdo
-        vertices.push(x - 25, 0, -500);
-        // Ponto do topo
-        vertices.push(x, height, -500);
-        // Ponto base direito
-        vertices.push(x + 25, 0, -500);
-        
-        // Cores para as montanhas (tons de azul/cinza para dar sensação de distância)
-        const shade = 0.4 + Math.random() * 0.2;
-        mountainColors.push(shade * 0.5, shade * 0.6, shade * 0.7);
-        mountainColors.push(shade * 0.6, shade * 0.7, shade * 0.8);
-        mountainColors.push(shade * 0.5, shade * 0.6, shade * 0.7);
+// Método simplificado para criar o chão
+createSimpleGround() {
+    // Remover qualquer terreno existente
+    if (this.ground) {
+        this.scene.remove(this.ground);
     }
     
-    mountainGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    mountainGeometry.setAttribute('color', new THREE.Float32BufferAttribute(mountainColors, 3));
-    
-    const mountainMaterial = new THREE.MeshBasicMaterial({ 
-        vertexColors: true,
+    // Criar um plano grande para o chão
+    const groundSize = 2000; // Tamanho muito grande para cobrir toda a área visível
+    const groundGeometry = new THREE.PlaneGeometry(groundSize, groundSize);
+    const groundMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x4CAF50, // Verde para grama
         side: THREE.DoubleSide
     });
     
-    const mountains = new THREE.Mesh(mountainGeometry, mountainMaterial);
-    this.scene.add(mountains);
+    this.ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    this.ground.rotation.x = Math.PI / 2; // Rotacionar para ficar horizontal
+    this.ground.position.y = -0.5; // Posicionar logo abaixo da pista
+    
+    // Adicionar à cena
+    this.scene.add(this.ground);
+    
+    // Adicionar textura para parecer mais natural
+    const textureSize = 100;
+    const textureGeometry = new THREE.PlaneGeometry(textureSize, textureSize, 10, 10);
+    const textureMaterial = new THREE.MeshPhongMaterial({
+        color: 0x3E8E41, // Verde um pouco mais escuro
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.7
+    });
+    
+    // Criar uma grade de texturas para dar mais detalhe ao chão
+    for (let x = -groundSize/2; x < groundSize/2; x += textureSize) {
+        for (let z = -groundSize/2; z < groundSize/2; z += textureSize) {
+            const textureMesh = new THREE.Mesh(textureGeometry, textureMaterial);
+            textureMesh.rotation.x = Math.PI / 2;
+            textureMesh.position.set(
+                x + textureSize/2 + Math.random() * 10 - 5,
+                -0.49, // Ligeiramente acima do chão principal
+                z + textureSize/2 + Math.random() * 10 - 5
+            );
+            textureMesh.scale.set(
+                0.8 + Math.random() * 0.4,
+                0.8 + Math.random() * 0.4,
+                1
+            );
+            this.scene.add(textureMesh);
+        }
+    }
+}
+
+createTerrain() {
+    // Remover a criação do plano único grande
+    // Em vez disso, vamos criar um sistema de "tiles" de terreno que seguem o jogador
+    
+    // Configurações do terreno
+    this.terrainConfig = {
+        tileSize: 200,         // Tamanho de cada tile de terreno
+        tilesPerSide: 3,       // Número de tiles em cada direção (3x3 grid)
+        centerTileIndex: 1,    // Índice do tile central (onde o jogador está)
+        tiles: []              // Array para armazenar os tiles
+    };
+    
+    // Criar os tiles iniciais
+    for (let z = -1; z <= 1; z++) {
+        for (let x = -1; x <= 1; x++) {
+            this.createTerrainTile(x, z);
+        }
+    }
+}
+
+// Método para criar um tile de terreno
+createTerrainTile(gridX, gridZ) {
+    const tileSize = this.terrainConfig.tileSize;
+    
+    // Criar geometria do terreno
+    const terrainGeometry = new THREE.PlaneGeometry(tileSize, tileSize, 8, 8);
+    
+    // Adicionar variação de altura para terreno não ser totalmente plano
+    const vertices = terrainGeometry.attributes.position.array;
+    for (let i = 0; i < vertices.length; i += 3) {
+        // Não modificar os vértices próximos à estrada
+        const x = vertices[i];
+        const z = vertices[i + 2];
+        const distanceFromCenter = Math.sqrt(x * x + z * z);
+        
+        if (distanceFromCenter > 15) { // Não modificar próximo à estrada
+            vertices[i + 1] = -0.5 + Math.random() * 0.3; // Pequena variação de altura
+        } else {
+            vertices[i + 1] = -0.5; // Manter plano próximo à estrada
+        }
+    }
+    
+    // Atualizar a geometria
+    terrainGeometry.attributes.position.needsUpdate = true;
+    terrainGeometry.computeVertexNormals();
+    
+    // Criar material com textura de grama
+    const terrainMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x4CAF50, // Verde para grama
+        side: THREE.DoubleSide,
+        flatShading: true // Para dar um aspecto mais natural
+    });
+    
+    // Criar mesh
+    const terrainMesh = new THREE.Mesh(terrainGeometry, terrainMaterial);
+    terrainMesh.rotation.x = Math.PI / 2; // Rotacionar para ficar horizontal
+    
+    // Posicionar o tile na grade
+    terrainMesh.position.x = gridX * tileSize;
+    terrainMesh.position.z = gridZ * tileSize;
+    
+    // Adicionar à cena
+    this.scene.add(terrainMesh);
+    
+    // Armazenar referência ao tile
+    this.terrainConfig.tiles.push({
+        mesh: terrainMesh,
+        gridX: gridX,
+        gridZ: gridZ
+    });
+    
+    return terrainMesh;
+}
+
+// Modificar o método createMountains
+createMountains() {
+    // Remover montanhas existentes
+    if (this.mountains) {
+        for (const mountain of this.mountains) {
+            this.scene.remove(mountain);
+        }
+    }
+    
+    this.mountains = [];
+    
+    // Criar montanhas em um círculo ao redor do ponto inicial
+    const radius = 500; // Distância das montanhas
+    const segments = 16; // Número de segmentos ao redor do círculo
+    
+    for (let i = 0; i < segments; i++) {
+        const angle = (i / segments) * Math.PI * 2;
+        const x = Math.sin(angle) * radius;
+        const z = Math.cos(angle) * radius;
+        
+        // Criar uma montanha
+        const mountainHeight = 50 + Math.random() * 50;
+        const mountainWidth = 100 + Math.random() * 100;
+        
+        const mountainGeometry = new THREE.ConeGeometry(
+            mountainWidth / 2, // Raio da base
+            mountainHeight,    // Altura
+            4,                 // Número de lados (4 para forma piramidal)
+            1,                 // Segmentos de altura
+            false              // Aberto ou fechado
+        );
+        
+        // Cor da montanha (tons de cinza/azul para dar sensação de distância)
+        const shade = 0.4 + Math.random() * 0.2;
+        const mountainMaterial = new THREE.MeshPhongMaterial({
+            color: new THREE.Color(shade * 0.5, shade * 0.6, shade * 0.7),
+            flatShading: true
+        });
+        
+        const mountain = new THREE.Mesh(mountainGeometry, mountainMaterial);
+        mountain.position.set(x, mountainHeight / 2 - 0.5, z);
+        mountain.rotation.y = Math.random() * Math.PI; // Rotação aleatória
+        
+        this.scene.add(mountain);
+        this.mountains.push(mountain);
+    }
 }
 
 // Método para popular a paisagem com elementos
@@ -146,6 +279,62 @@ populateLandscape() {
             this.addLandscapeElement(x, z, landscapeTypes);
         }
     }
+}
+
+// Método para criar uma cadeia de montanhas
+createMountainRange(angle) {
+    const distance = this.mountainsConfig.distance;
+    const segments = this.mountainsConfig.segments;
+    
+    // Criar geometria para a cadeia de montanhas
+    const mountainGeometry = new THREE.BufferGeometry();
+    const vertices = [];
+    const mountainColors = [];
+    
+    // Largura total da cadeia de montanhas
+    const rangeWidth = 1000;
+    
+    // Gerar pontos para as montanhas
+    for (let i = 0; i < segments; i++) {
+        const x = -rangeWidth/2 + i * (rangeWidth / segments);
+        const height = 30 + Math.random() * 70;
+        
+        // Ponto base esquerdo
+        vertices.push(x - rangeWidth/(segments*2), 0, 0);
+        // Ponto do topo
+        vertices.push(x, height, 0);
+        // Ponto base direito
+        vertices.push(x + rangeWidth/(segments*2), 0, 0);
+        
+        // Cores para as montanhas (tons de azul/cinza para dar sensação de distância)
+        const shade = 0.4 + Math.random() * 0.2;
+        mountainColors.push(shade * 0.5, shade * 0.6, shade * 0.7);
+        mountainColors.push(shade * 0.6, shade * 0.7, shade * 0.8);
+        mountainColors.push(shade * 0.5, shade * 0.6, shade * 0.7);
+    }
+    
+    mountainGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    mountainGeometry.setAttribute('color', new THREE.Float32BufferAttribute(mountainColors, 3));
+    
+    const mountainMaterial = new THREE.MeshBasicMaterial({ 
+        vertexColors: true,
+        side: THREE.DoubleSide
+    });
+    
+    const mountains = new THREE.Mesh(mountainGeometry, mountainMaterial);
+    
+    // Posicionar e rotacionar a cadeia de montanhas
+    mountains.position.y = 0;
+    mountains.rotation.y = angle;
+    
+    // Adicionar à cena
+    this.scene.add(mountains);
+    
+    // Armazenar referência
+    this.mountainsConfig.mountains.push({
+        mesh: mountains,
+        angle: angle
+    });
 }
 
 // Método para adicionar um elemento de paisagem
@@ -577,6 +766,15 @@ updateLandscape(carPosition) {
             }
         }
 
+        // Atualizar o terreno para seguir o jogador
+        if (this.ground) {
+            this.ground.position.x = carPosition.x;
+            this.ground.position.z = carPosition.z;
+        }
+
+        this.updateMountains(carPosition);
+        
+        // Atualizar elementos de paisagem
         this.updateLandscape(carPosition);
         
         // Remover segmentos antigos (do último para o primeiro para não afetar os índices)
@@ -597,6 +795,80 @@ updateLandscape(carPosition) {
             this.createSegment();
         }
     }
+
+    // Método para atualizar o terreno
+updateTerrain(carPosition) {
+    const tileSize = this.terrainConfig.tileSize;
+    
+    // Calcular em qual tile o jogador está atualmente
+    const currentTileX = Math.floor(carPosition.x / tileSize);
+    const currentTileZ = Math.floor(carPosition.z / tileSize);
+    
+    // Verificar se precisamos reposicionar os tiles
+    const tilesToUpdate = [];
+    
+    for (const tile of this.terrainConfig.tiles) {
+        // Calcular a distância em tiles entre este tile e a posição atual do jogador
+        const distX = Math.abs(tile.gridX - currentTileX);
+        const distZ = Math.abs(tile.gridZ - currentTileZ);
+        
+        // Se o tile estiver muito longe, marcá-lo para atualização
+        if (distX > 1 || distZ > 1) {
+            tilesToUpdate.push(tile);
+        }
+    }
+    
+    // Reposicionar os tiles que estão muito longe
+    for (const tile of tilesToUpdate) {
+        // Calcular nova posição na grade
+        let newGridX = currentTileX;
+        let newGridZ = currentTileZ;
+        
+        // Determinar em qual direção mover o tile
+        if (tile.gridX < currentTileX - 1) newGridX = currentTileX + 1;
+        else if (tile.gridX > currentTileX + 1) newGridX = currentTileX - 1;
+        else newGridX = tile.gridX;
+        
+        if (tile.gridZ < currentTileZ - 1) newGridZ = currentTileZ + 1;
+        else if (tile.gridZ > currentTileZ + 1) newGridZ = currentTileZ - 1;
+        else newGridZ = tile.gridZ;
+        
+        // Verificar se já existe um tile nesta posição
+        const tileExists = this.terrainConfig.tiles.some(t => 
+            t !== tile && t.gridX === newGridX && t.gridZ === newGridZ);
+        
+        if (!tileExists) {
+            // Atualizar posição do tile
+            tile.gridX = newGridX;
+            tile.gridZ = newGridZ;
+            tile.mesh.position.x = newGridX * tileSize;
+            tile.mesh.position.z = newGridZ * tileSize;
+        }
+    }
+
+    // Atualizar posição das montanhas
+    this.updateMountains(carPosition);
+}
+
+// Método para atualizar as montanhas
+updateMountains(carPosition) {
+    if (!this.mountains) return;
+    
+    for (const mountain of this.mountains) {
+        // Manter a mesma posição relativa ao jogador
+        const dx = mountain.position.x - this.lastCarPosition.x;
+        const dz = mountain.position.z - this.lastCarPosition.z;
+        
+        mountain.position.x = carPosition.x + dx;
+        mountain.position.z = carPosition.z + dz;
+    }
+    
+    // Armazenar a posição atual do carro para o próximo frame
+    this.lastCarPosition = {
+        x: carPosition.x,
+        z: carPosition.z
+    };
+}
     
     getSegmentAt(zPosition) {
         // Encontrar o segmento na posição Z
