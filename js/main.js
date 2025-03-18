@@ -1,15 +1,16 @@
 // Ponto de entrada da aplicação
+// Variáveis para estatísticas
 let totalCoins = 0;
 let playerName = "";
 let totalTimePlayed = 0;
 let totalObstaclesPassed = 0;
 let totalTurnsMade = 0;
 let gamesPlayed = 0;
+let bestGameTime = 0; // Novo: recorde de tempo de partida
 
 let ownedCars = ['default']; // Carros que o jogador possui
 let selectedCar = 'default'; // Carro atualmente selecionado
 
-// Função para inicializar o jogo quando a página carregar
 // Função para inicializar o jogo quando a página carregar
 function initGame() {
     // Verificar se o usuário está autenticado
@@ -29,6 +30,7 @@ function initGame() {
                     if (userData.totalObstaclesPassed) totalObstaclesPassed = userData.totalObstaclesPassed;
                     if (userData.totalTurnsMade) totalTurnsMade = userData.totalTurnsMade;
                     if (userData.gamesPlayed) gamesPlayed = userData.gamesPlayed;
+                    if (userData.bestGameTime) bestGameTime = userData.bestGameTime;
                 }
                 
                 // Esconder a tela de boas-vindas
@@ -46,6 +48,7 @@ function initGame() {
     // Configurar os botões da loja
     setupShopScreen();
 }
+
 
 // Configurar os botões da tela da loja
 function setupShopScreen() {
@@ -358,6 +361,7 @@ function saveUserData() {
         totalObstaclesPassed: totalObstaclesPassed,
         totalTurnsMade: totalTurnsMade,
         gamesPlayed: gamesPlayed,
+        bestGameTime: bestGameTime,
         lastUpdated: new Date()
     };
     

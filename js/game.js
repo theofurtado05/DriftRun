@@ -330,59 +330,88 @@ updateCarModel(carType) {
     
     // Modificar a função showGameOver para atualizar estatísticas
     showGameOver() {
-    // Atualizar estatísticas finais
-    const gameTime = Math.floor(this.elapsedTime);
-    const gameCoins = this.coins;
-    const gameTurns = this.track.getTurnCount();
-    const gameObstacles = this.obstacleManager.getAvoidedCount();
-    
-    document.getElementById('total-time').textContent = gameTime;
-    document.getElementById('total-coins').textContent = gameCoins;
-    document.getElementById('total-turns').textContent = gameTurns;
-    document.getElementById('total-obstacles').textContent = gameObstacles;
-    
-    // Atualizar estatísticas globais
-    totalTimePlayed += gameTime;
-    totalObstaclesPassed += gameObstacles;
-    totalTurnsMade += gameTurns;
-    gamesPlayed += 1;
-    
-    // Adicionar moedas coletadas ao total
-    addCoins(gameCoins);
-    
-    // Salvar dados no Firestore
-    saveUserData();
-    
-    // Mostrar modal de game over
-    document.getElementById('game-over').style.display = 'block';
-    
-    // Verificar se o botão da loja já existe
-    if (!document.getElementById('open-shop-btn')) {
-        // Adicionar botão para abrir a loja
-        const shopButton = document.createElement('button');
-        shopButton.id = 'open-shop-btn';
-        shopButton.textContent = 'Loja de Carros';
-        shopButton.style.marginTop = '10px';
-        shopButton.style.backgroundColor = '#FFC107';
-        shopButton.style.color = 'black';
-        shopButton.style.border = 'none';
-        shopButton.style.padding = '10px 20px';
-        shopButton.style.borderRadius = '5px';
-        shopButton.style.cursor = 'pointer';
+        // Atualizar estatísticas finais
+        const gameTime = Math.floor(this.elapsedTime);
+        const gameCoins = this.coins;
+        const gameTurns = this.track.getTurnCount();
+        const gameObstacles = this.obstacleManager.getAvoidedCount();
         
-        // Adicionar evento de clique para abrir a loja
-        shopButton.addEventListener('click', () => {
-            document.getElementById('game-over').style.display = 'none';
-            openShop();
-        });
+        document.getElementById('total-time').textContent = gameTime;
+        document.getElementById('total-coins').textContent = gameCoins;
+        document.getElementById('total-turns').textContent = gameTurns;
+        document.getElementById('total-obstacles').textContent = gameObstacles;
         
-        // Adicionar botão ao modal de game over
-        document.getElementById('game-over').appendChild(shopButton);
-    }
+        // Atualizar o recorde na tela
+        const bestTimeElement = document.getElementById('best-time');
+        if (bestTimeElement) {
+            bestTimeElement.textContent = bestGameTime;
+        }
+        // Atualizar estatísticas globais
+        totalTimePlayed += gameTime;
+        totalObstaclesPassed += gameObstacles;
+        totalTurnsMade += gameTurns;
+        gamesPlayed += 1;
+        
+        // Verificar se é um novo recorde de tempo
+        if (gameTime > bestGameTime) {
+            bestGameTime = gameTime;
+            
+            // Mostrar mensagem de novo recorde
+            const recordMessage = document.createElement('p');
+            recordMessage.textContent = '🏆 NOVO RECORDE DE TEMPO! 🏆';
+            recordMessage.style.color = 'gold';
+            recordMessage.style.fontWeight = 'bold';
+            recordMessage.style.fontSize = '1.2em';
+            recordMessage.style.marginTop = '10px';
+            
+            // Inserir a mensagem no início do game-over
+            const gameOverDiv = document.getElementById('game-over');
+            gameOverDiv.insertBefore(recordMessage, gameOverDiv.firstChild.nextSibling);
+            
+            // Remover a mensagem após alguns segundos
+            setTimeout(() => {
+                if (recordMessage.parentNode) {
+                    recordMessage.parentNode.removeChild(recordMessage);
+                }
+            }, 5000);
+        }
+        
+        // Adicionar moedas coletadas ao total
+        addCoins(gameCoins);
+        
+        // Salvar dados no Firestore
+        saveUserData();
+        
+        // Mostrar modal de game over
+        document.getElementById('game-over').style.display = 'block';
+        
+        // Verificar se o botão da loja já existe
+        if (!document.getElementById('open-shop-btn')) {
+            // Adicionar botão para abrir a loja
+            const shopButton = document.createElement('button');
+            shopButton.id = 'open-shop-btn';
+            shopButton.textContent = 'Loja de Carros';
+            shopButton.style.marginTop = '10px';
+            shopButton.style.backgroundColor = '#FFC107';
+            shopButton.style.color = 'black';
+            shopButton.style.border = 'none';
+            shopButton.style.padding = '10px 20px';
+            shopButton.style.borderRadius = '5px';
+            shopButton.style.cursor = 'pointer';
+            
+            // Adicionar evento de clique para abrir a loja
+            shopButton.addEventListener('click', () => {
+                document.getElementById('game-over').style.display = 'none';
+                openShop();
+            });
+            
+            // Adicionar botão ao modal de game over
+            document.getElementById('game-over').appendChild(shopButton);
+        }
 
-    // Parar o carro
-    this.car.speed = 0;
-}
+        // Parar o carro
+        this.car.speed = 0;
+    }
     
     update(deltaTime) {
         if (!this.gameActive) return;
