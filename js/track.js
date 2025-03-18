@@ -8,6 +8,13 @@ class Track {
         this.turnCount = 0;
         this.billboards = []; // Array para armazenar as placas de anúncio
         
+        // Adicionar elementos de paisagem
+        this.landscapeElements = [];
+        this.landscapePool = []; // Pool de objetos reutilizáveis
+        
+        // Inicializar a paisagem
+        this.initializeLandscape();
+
         // Carregar texturas para os banners
         this.bannerTextures = [];
         
@@ -55,6 +62,242 @@ class Track {
         
         this.initializeTrack();
     }
+
+    // Adicionar método para inicializar a paisagem
+initializeLandscape() {
+    // Criar o chão (grama)
+    const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
+    const groundMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x4CAF50, // Verde para grama
+        side: THREE.DoubleSide
+    });
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = Math.PI / 2;
+    ground.position.y = -0.5;
+    this.scene.add(ground);
+    
+    // Criar montanhas ao fundo
+    this.createMountains();
+    
+    // Adicionar elementos iniciais de paisagem
+    this.populateLandscape();
+}
+
+// Método para criar montanhas ao fundo
+createMountains() {
+    // Criar montanhas distantes (fundo estático)
+    const mountainGeometry = new THREE.BufferGeometry();
+    const vertices = [];
+    const mountainColors = [];
+    
+    // Gerar pontos para as montanhas
+    for (let i = 0; i < 20; i++) {
+        const x = -500 + i * 50;
+        const height = 30 + Math.random() * 70;
+        
+        // Ponto base esquerdo
+        vertices.push(x - 25, 0, -500);
+        // Ponto do topo
+        vertices.push(x, height, -500);
+        // Ponto base direito
+        vertices.push(x + 25, 0, -500);
+        
+        // Cores para as montanhas (tons de azul/cinza para dar sensação de distância)
+        const shade = 0.4 + Math.random() * 0.2;
+        mountainColors.push(shade * 0.5, shade * 0.6, shade * 0.7);
+        mountainColors.push(shade * 0.6, shade * 0.7, shade * 0.8);
+        mountainColors.push(shade * 0.5, shade * 0.6, shade * 0.7);
+    }
+    
+    mountainGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    mountainGeometry.setAttribute('color', new THREE.Float32BufferAttribute(mountainColors, 3));
+    
+    const mountainMaterial = new THREE.MeshBasicMaterial({ 
+        vertexColors: true,
+        side: THREE.DoubleSide
+    });
+    
+    const mountains = new THREE.Mesh(mountainGeometry, mountainMaterial);
+    this.scene.add(mountains);
+}
+
+// Método para popular a paisagem com elementos
+populateLandscape() {
+    // Tipos de elementos de paisagem
+    const landscapeTypes = [
+        { type: 'tree', probability: 0.6 },
+        { type: 'house', probability: 0.3 },
+        { type: 'building', probability: 0.1 }
+    ];
+    
+    // Adicionar elementos em ambos os lados da pista
+    for (let z = 0; z < 500; z += 20) {
+        // Lado esquerdo
+        if (Math.random() < 0.3) {
+            const distanceFromRoad = 15 + Math.random() * 30;
+            const x = -distanceFromRoad;
+            this.addLandscapeElement(x, z, landscapeTypes);
+        }
+        
+        // Lado direito
+        if (Math.random() < 0.3) {
+            const distanceFromRoad = 15 + Math.random() * 30;
+            const x = distanceFromRoad;
+            this.addLandscapeElement(x, z, landscapeTypes);
+        }
+    }
+}
+
+// Método para adicionar um elemento de paisagem
+addLandscapeElement(x, z, landscapeTypes) {
+    // Escolher tipo de elemento com base nas probabilidades
+    let elementType = null;
+    const rand = Math.random();
+    let cumulativeProbability = 0;
+    
+    for (const type of landscapeTypes) {
+        cumulativeProbability += type.probability;
+        if (rand < cumulativeProbability) {
+            elementType = type.type;
+            break;
+        }
+    }
+    
+    // Criar o elemento com base no tipo
+    let element;
+    
+    // Verificar se há um elemento disponível na pool
+    const poolElement = this.getElementFromPool(elementType);
+    if (poolElement) {
+        element = poolElement;
+        element.position.set(x, 0, z);
+    } else {
+        // Criar novo elemento se não houver na pool
+        switch (elementType) {
+            case 'tree':
+                element = this.createTree(x, z);
+                break;
+            case 'house':
+                element = this.createHouse(x, z);
+                break;
+            case 'building':
+                element = this.createBuilding(x, z);
+                break;
+            default:
+                element = this.createTree(x, z);
+        }
+    }
+    
+    // Adicionar à lista de elementos de paisagem
+    this.landscapeElements.push({
+        mesh: element,
+        type: elementType,
+        position: { x, z }
+    });
+}
+
+// Método para criar uma árvore
+createTree(x, z) {
+    // Tronco
+    const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.8, 4, 8);
+    const trunkMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+    const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+    trunk.position.set(x, 2, z);
+    
+    // Copa
+    const topGeometry = new THREE.ConeGeometry(3, 6, 8);
+    const topMaterial = new THREE.MeshPhongMaterial({ 
+        color: Math.random() > 0.3 ? 0x228B22 : 0x006400 // Variação de verde
+    });
+    const top = new THREE.Mesh(topGeometry, topMaterial);
+    top.position.set(0, 5, 0);
+    
+    // Grupo para a árvore completa
+    const tree = new THREE.Group();
+    tree.add(trunk);
+    tree.add(top);
+    tree.position.set(x, 0, z);
+    
+    this.scene.add(tree);
+    return tree;
+}
+
+// Método para criar uma casa
+createHouse(x, z) {
+    // Corpo da casa
+    const bodyGeometry = new THREE.BoxGeometry(8, 6, 8);
+    const bodyMaterial = new THREE.MeshPhongMaterial({ 
+        color: Math.random() > 0.5 ? 0xF5F5DC : 0xD3D3D3 // Bege ou cinza claro
+    });
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    body.position.set(0, 3, 0);
+    
+    // Telhado
+    const roofGeometry = new THREE.ConeGeometry(8, 4, 4);
+    const roofMaterial = new THREE.MeshPhongMaterial({ 
+        color: Math.random() > 0.5 ? 0x8B0000 : 0x800000 // Tons de vermelho
+    });
+    const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+    roof.position.set(0, 8, 0);
+    roof.rotation.y = Math.PI / 4;
+    
+    // Grupo para a casa completa
+    const house = new THREE.Group();
+    house.add(body);
+    house.add(roof);
+    house.position.set(x, 0, z);
+    
+    this.scene.add(house);
+    return house;
+}
+
+// Método para criar um prédio
+createBuilding(x, z) {
+    // Altura aleatória para o prédio
+    const height = 10 + Math.random() * 20;
+    
+    // Corpo do prédio
+    const bodyGeometry = new THREE.BoxGeometry(10, height, 10);
+    const bodyMaterial = new THREE.MeshPhongMaterial({ 
+        color: Math.random() > 0.5 ? 0x808080 : 0xA9A9A9 // Tons de cinza
+    });
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    body.position.set(0, height/2, 0);
+    
+    // Janelas (textura procedural)
+    const windowsGeometry = new THREE.BoxGeometry(10.1, height, 10.1);
+    const windowsMaterial = new THREE.MeshPhongMaterial({
+        color: 0xFFFFFF,
+        transparent: true,
+        opacity: 0.3,
+        emissive: 0xFFFF00,
+        emissiveIntensity: 0.2
+    });
+    const windows = new THREE.Mesh(windowsGeometry, windowsMaterial);
+    windows.position.set(0, height/2, 0);
+    
+    // Grupo para o prédio completo
+    const building = new THREE.Group();
+    building.add(body);
+    building.add(windows);
+    building.position.set(x, 0, z);
+    
+    this.scene.add(building);
+    return building;
+}
+
+// Método para obter um elemento da pool
+getElementFromPool(type) {
+    for (let i = 0; i < this.landscapePool.length; i++) {
+        if (this.landscapePool[i].type === type) {
+            const element = this.landscapePool[i].mesh;
+            this.landscapePool.splice(i, 1);
+            return element;
+        }
+    }
+    return null;
+}
+
     
     initializeTrack() {
         // Criar segmentos iniciais
@@ -257,6 +500,69 @@ class Track {
 
     return billboard;
 }
+
+// Método para atualizar a paisagem
+updateLandscape(carPosition) {
+    // Verificar elementos que ficaram para trás e reciclá-los
+    const elementsToRemove = [];
+    
+    for (let i = 0; i < this.landscapeElements.length; i++) {
+        const element = this.landscapeElements[i];
+        
+        // Se o elemento ficou muito para trás, reciclar
+        if (element.position.z < carPosition.z - 100) {
+            elementsToRemove.push(i);
+            
+            // Adicionar à pool para reutilização
+            this.landscapePool.push({
+                mesh: element.mesh,
+                type: element.type
+            });
+            
+            // Remover da cena
+            this.scene.remove(element.mesh);
+        }
+    }
+    
+    // Remover elementos (do último para o primeiro para não afetar os índices)
+    for (let i = elementsToRemove.length - 1; i >= 0; i--) {
+        this.landscapeElements.splice(elementsToRemove[i], 1);
+    }
+    
+    // Adicionar novos elementos à frente
+    if (this.landscapeElements.length < 100) { // Limitar número de elementos
+        const landscapeTypes = [
+            { type: 'tree', probability: 0.6 },
+            { type: 'house', probability: 0.3 },
+            { type: 'building', probability: 0.1 }
+        ];
+        
+        // Calcular posição Z para novos elementos
+        let maxZ = carPosition.z;
+        for (const element of this.landscapeElements) {
+            if (element.position.z > maxZ) {
+                maxZ = element.position.z;
+            }
+        }
+        
+        // Adicionar novos elementos
+        for (let z = maxZ; z < carPosition.z + 500; z += 20) {
+            // Lado esquerdo
+            if (Math.random() < 0.3) {
+                const distanceFromRoad = 15 + Math.random() * 30;
+                const x = -distanceFromRoad;
+                this.addLandscapeElement(x, z, landscapeTypes);
+            }
+            
+            // Lado direito
+            if (Math.random() < 0.3) {
+                const distanceFromRoad = 15 + Math.random() * 30;
+                const x = distanceFromRoad;
+                this.addLandscapeElement(x, z, landscapeTypes);
+            }
+        }
+    }
+}
     
     update(carPosition) {
         // Verificar se precisamos remover segmentos antigos
@@ -270,6 +576,8 @@ class Track {
                 segmentsToRemove.push(i);
             }
         }
+
+        this.updateLandscape(carPosition);
         
         // Remover segmentos antigos (do último para o primeiro para não afetar os índices)
         for (let i = segmentsToRemove.length - 1; i >= 0; i--) {
@@ -282,6 +590,7 @@ class Track {
             // Remover da lista de segmentos
             this.segments.splice(index, 1);
         }
+
         
         // Adicionar novos segmentos se necessário
         while (this.segments.length < CONFIG.track.maxVisibleSegments) {

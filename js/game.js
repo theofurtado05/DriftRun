@@ -38,6 +38,7 @@ class Game {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(CONFIG.colors.sky);
         
+        this.scene.fog = new THREE.Fog(0x87CEEB, 100, 500);
         // Inicializar câmera
         this.camera = new THREE.PerspectiveCamera(
             CONFIG.camera.fov,
@@ -68,18 +69,18 @@ class Game {
         // Inicializar elementos do jogo
         // Inicializar carro
         // Inicializar elementos do jogo
-    this.car = new Car(this.scene, this.carType);
-    this.track = new Track(this.scene);
-    this.obstacleManager = new ObstacleManager(this.scene);
-    
-    // Inicializar controles móveis
-    this.mobileControls = new MobileControls(this);
+        this.car = new Car(this.scene, this.carType);
+        this.track = new Track(this.scene);
+        this.obstacleManager = new ObstacleManager(this.scene);
+        
+        // Inicializar controles móveis
+        this.mobileControls = new MobileControls(this);
 
-        // Configurar botão da loja
-    document.getElementById('open-shop-btn').addEventListener('click', () => {
-        document.getElementById('game-over').style.display = 'none';
-        openShop();
-    });
+            // Configurar botão da loja
+        document.getElementById('open-shop-btn').addEventListener('click', () => {
+            document.getElementById('game-over').style.display = 'none';
+            openShop();
+        });
         
         // Resetar stats
         this.resetStats();
@@ -87,6 +88,35 @@ class Game {
         // Iniciar o jogo
         this.start();
     }
+
+    // Adicionar método para configurar luzes
+setupLights() {
+    // Luz ambiente
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    this.scene.add(ambientLight);
+    
+    // Luz direcional (sol)
+    const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    sunLight.position.set(100, 100, 0);
+    sunLight.castShadow = true;
+    
+    // Configurar sombras
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 0.5;
+    sunLight.shadow.camera.far = 500;
+    sunLight.shadow.camera.left = -100;
+    sunLight.shadow.camera.right = 100;
+    sunLight.shadow.camera.top = 100;
+    sunLight.shadow.camera.bottom = -100;
+    
+    this.scene.add(sunLight);
+    
+    // Luz hemisférica para iluminação natural
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    hemiLight.position.set(0, 300, 0);
+    this.scene.add(hemiLight);
+}
 
     // Adicionar método para atualizar o modelo do carro
 updateCarModel(carType) {
@@ -310,15 +340,19 @@ updateCarModel(carType) {
     
     update(deltaTime) {
         if (!this.gameActive) return;
-        
+    
         // Atualizar elementos do jogo
         this.elapsedTime += deltaTime;
         
         // Atualizar carro
         this.car.update(deltaTime, this.inputDirection);
-    
-        // Atualizar tempo e moedas
-        this.elapsedTime += deltaTime;
+        
+        // Atualizar pista e paisagem
+        this.track.update(this.car.position);
+        
+        // Atualizar obstáculos
+        this.obstacleManager.update(deltaTime, this.car.position);
+
         document.getElementById('time').textContent = Math.floor(this.elapsedTime);
         
         // Verificar se é hora de adicionar moeda
