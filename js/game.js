@@ -8,10 +8,11 @@ class Game {
         this.clock = new THREE.Clock();
         
         // Elementos do jogo
-    this.carType = carType;
-    this.car = null;
-    this.track = null;
-    this.obstacleManager = null;
+        this.carType = carType;
+        this.car = null;
+        this.track = null;
+        this.obstacleManager = null;
+        this.mobileControls = null;
         
         // Estado do jogo
         this.gameActive = false;
@@ -66,9 +67,13 @@ class Game {
         
         // Inicializar elementos do jogo
         // Inicializar carro
-        this.car = new Car(this.scene, this.carType);
-        this.track = new Track(this.scene);
-        this.obstacleManager = new ObstacleManager(this.scene);
+        // Inicializar elementos do jogo
+    this.car = new Car(this.scene, this.carType);
+    this.track = new Track(this.scene);
+    this.obstacleManager = new ObstacleManager(this.scene);
+    
+    // Inicializar controles móveis
+    this.mobileControls = new MobileControls(this);
 
         // Configurar botão da loja
     document.getElementById('open-shop-btn').addEventListener('click', () => {
@@ -128,9 +133,11 @@ updateCarModel(carType) {
         window.addEventListener('keydown', this.keyDownHandler);
         window.addEventListener('keyup', this.keyUpHandler);
         
-        // Event listeners para touch
-        window.addEventListener('touchstart', this.touchStartHandler);
-        window.addEventListener('touchmove', this.touchMoveHandler);
+        // Event listeners para touch (apenas se não estiver usando controles móveis)
+        if (!this.mobileControls || !this.mobileControls.isActive) {
+            window.addEventListener('touchstart', this.touchStartHandler);
+            window.addEventListener('touchmove', this.touchMoveHandler);
+        }
         
         // Event listener para redimensionamento da janela
         window.addEventListener('resize', this.resizeHandler);
@@ -142,10 +149,15 @@ updateCarModel(carType) {
     removeEventListeners() {
         window.removeEventListener('keydown', this.keyDownHandler);
         window.removeEventListener('keyup', this.keyUpHandler);
-        window.removeEventListener('touchstart', this.touchStartHandler);
-        window.removeEventListener('touchmove', this.touchMoveHandler);
+        
+        if (!this.mobileControls || !this.mobileControls.isActive) {
+            window.removeEventListener('touchstart', this.touchStartHandler);
+            window.removeEventListener('touchmove', this.touchMoveHandler);
+        }
+        
         window.removeEventListener('resize', this.resizeHandler);
     }
+    
     
     handleKeyDown(event) {
         if (event.key === 'ArrowLeft') {
@@ -345,6 +357,11 @@ updateCarModel(carType) {
     cleanup() {
         // Remover event listeners
         this.removeEventListeners();
+        
+        // Remover controles móveis
+        if (this.mobileControls && this.mobileControls.isActive) {
+            this.mobileControls.remove();
+        }
         
         // Remover renderer
         this.renderer.dispose();
