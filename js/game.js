@@ -65,6 +65,10 @@ class Game {
         
         // Adicionar luzes
         this.setupLights();
+
+        // Inicializar gerenciador de moedas
+        this.coinManager = new CoinManager(this.scene, this);
+    
         
         // Inicializar elementos do jogo
         // Inicializar carro
@@ -88,6 +92,29 @@ class Game {
         // Iniciar o jogo
         this.start();
     }
+
+    // Adicionar método para coletar moeda
+collectCoin() {
+    // Adicionar uma moeda ao contador
+    addCoins(1);
+    
+    // Reproduzir som de moeda
+    this.playCoinSound();
+}
+
+// Adicionar método para reproduzir som de moeda
+playCoinSound() {
+    // Verificar se o áudio está disponível
+    if (!this.coinSound) {
+        // Criar elemento de áudio
+        this.coinSound = new Audio('assets/coin.mp3');
+        this.coinSound.volume = 0.3;
+    }
+    
+    // Clonar o som para permitir sobreposição
+    const sound = this.coinSound.cloneNode();
+    sound.play();
+}
 
     // Adicionar método para configurar luzes
 setupLights() {
@@ -280,6 +307,10 @@ updateCarModel(carType) {
         
         // Resetar stats
         this.resetStats();
+
+        if (this.coinManager) {
+            this.coinManager.reset();
+        }
         
         // Reiniciar o jogo
         this.start();
@@ -352,6 +383,10 @@ updateCarModel(carType) {
         
         // Atualizar obstáculos
         this.obstacleManager.update(deltaTime, this.car.position);
+
+        // Atualizar moedas
+        this.coinManager.update(deltaTime, this.car.position);
+    
 
         document.getElementById('time').textContent = Math.floor(this.elapsedTime);
         
