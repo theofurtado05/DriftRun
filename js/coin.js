@@ -1,4 +1,4 @@
-// Classe para gerenciar as moedas no jogo
+// Modificar a classe CoinManager para gerar moedas individuais
 class CoinManager {
     constructor(scene, game) {
         this.scene = scene;
@@ -8,7 +8,7 @@ class CoinManager {
         this.coinMaterial = null;
         this.coinPool = []; // Pool de moedas para reutilização
         this.lastCoinTime = 0;
-        this.coinInterval = CONFIG.game.coinInterval || 0.5; // Intervalo entre grupos de moedas
+        this.coinInterval = 0.5; // Intervalo entre moedas individuais (em segundos)
         
         // Inicializar geometria e material das moedas
         this.initCoinGeometry();
@@ -47,6 +47,9 @@ class CoinManager {
             coin.castShadow = true;
             coin.receiveShadow = true;
             
+            // Rotacionar para ficar de frente para o jogador
+            coin.rotation.x = Math.PI / 2;
+            
             this.scene.add(coin);
         }
         
@@ -61,77 +64,35 @@ class CoinManager {
         return coin;
     }
     
-    // Criar um grupo de moedas (linha, círculo, etc.)
-    createCoinGroup(basePosition, type = 'line') {
-        const coins = [];
-        
-        switch (type) {
-            case 'line':
-                // Criar uma linha de moedas
-                const length = 3 + Math.floor(Math.random() * 5); // 3-7 moedas
-                for (let i = 0; i < length; i++) {
-                    const position = {
-                        x: basePosition.x,
-                        y: basePosition.y,
-                        z: basePosition.z + i * 2 // Espaçamento de 2 unidades
-                    };
-                    coins.push(this.createCoin(position));
-                }
-                break;
-                
-            case 'circle':
-                // Criar um círculo de moedas
-                const radius = 3;
-                const count = 8;
-                for (let i = 0; i < count; i++) {
-                    const angle = (i / count) * Math.PI * 2;
-                    const position = {
-                        x: basePosition.x + Math.sin(angle) * radius,
-                        y: basePosition.y,
-                        z: basePosition.z + Math.cos(angle) * radius
-                    };
-                    coins.push(this.createCoin(position));
-                }
-                break;
-                
-            case 'zigzag':
-                // Criar um padrão zigzag
-                const zigLength = 5;
-                for (let i = 0; i < zigLength; i++) {
-                    const position = {
-                        x: basePosition.x + (i % 2 === 0 ? 2 : -2), // Alternar entre direita e esquerda
-                        y: basePosition.y,
-                        z: basePosition.z + i * 2
-                    };
-                    coins.push(this.createCoin(position));
-                }
-                break;
-        }
-        
-        return coins;
-    }
-    
     // Atualizar moedas (rotação, colisão, etc.)
     update(deltaTime, carPosition) {
         // Adicionar novas moedas com base no intervalo
-        this.lastCoinTime += deltaTime;
+    this.lastCoinTime += deltaTime;
+    
+    if (this.lastCoinTime > this.coinInterval) {
+        this.lastCoinTime = 0;
         
-        if (this.lastCoinTime > this.coinInterval) {
-            this.lastCoinTime = 0;
-            
-            // Posição base para o novo grupo de moedas (à frente do carro)
-            const basePosition = {
-                x: (Math.random() * 6) - 3, // Posição X aleatória na pista
-                y: 1, // Altura da moeda
-                z: carPosition.z + 100 + Math.random() * 50 // À frente do carro
+        // Decidir aleatoriamente se vamos criar uma moeda individual ou um pequeno padrão
+        const patternChance = 0.2; // 20% de chance de criar um padrão
+        
+        if (Math.random() < patternChance) {
+            // Criar um pequeno padrão de moedas
+            this.createCoinPattern(carPosition);
+        } else {
+            // Gerar uma nova moeda individual à frente do carro
+            const position = {
+                // Posição X aleatória dentro dos limites da pista
+                x: (Math.random() * 8) - 4,
+                // Altura da moeda (flutuando acima do chão)
+                y: 1,
+                // Posição Z à frente do carro
+                z: carPosition.z + 100 + Math.random() * 50
             };
             
-            // Tipos de grupos de moedas
-            const groupTypes = ['line', 'circle', 'zigzag'];
-            const randomType = groupTypes[Math.floor(Math.random() * groupTypes.length)];
-            
-            this.createCoinGroup(basePosition, randomType);
+            // Criar a moeda
+            this.createCoin(position);
         }
+    }
         
         // Verificar moedas para colisão e remoção
         const coinsToRemove = [];
@@ -223,6 +184,8 @@ class CoinManager {
                 z: (Math.random() - 0.5) * 0.2
             });
         }
+
+        
         
         // Função de animação
         const animate = () => {
@@ -271,4 +234,74 @@ class CoinManager {
         // Resetar temporizador
         this.lastCoinTime = 0;
     }
+
+    // Método para criar padrões de moedas mais interessantes
+createCoinPattern(carPosition) {
+    // Tipos de padrões
+    const patterns = [
+        'curve',     // Curva suave
+        'zigzag',    // Zigue-zague
+        'jump'       // Padrão para pular
+    ];
+    
+    // Escolher um padrão aleatoriamente
+    const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+    
+    // Posição base para o padrão (à frente do carro)
+    const basePosition = {
+        x: (Math.random() * 6) - 3, // Posição X aleatória na pista
+        y: 1, // Altura da moeda
+        z: carPosition.z + 100 + Math.random() * 50 // À frente do carro
+    };
+    
+    switch (pattern) {
+        case 'curve':
+            // Criar uma curva suave de moedas
+            const curvePoints = 5;
+            const curveRadius = 3;
+            const curveAngle = Math.PI / 2; // 90 graus
+            
+            for (let i = 0; i < curvePoints; i++) {
+                const angle = (i / (curvePoints - 1)) * curveAngle;
+                const position = {
+                    x: basePosition.x + Math.sin(angle) * curveRadius,
+                    y: basePosition.y,
+                    z: basePosition.z + Math.cos(angle) * curveRadius
+                };
+                this.createCoin(position);
+            }
+            break;
+            
+        case 'zigzag':
+            // Criar um padrão zigue-zague
+            const zigPoints = 5;
+            const zigWidth = 2;
+            
+            for (let i = 0; i < zigPoints; i++) {
+                const position = {
+                    x: basePosition.x + ((i % 2 === 0) ? zigWidth : -zigWidth),
+                    y: basePosition.y,
+                    z: basePosition.z + i * 3
+                };
+                this.createCoin(position);
+            }
+            break;
+            
+        case 'jump':
+            // Criar um padrão para incentivar pulos (se o jogo tiver mecânica de pulo)
+            const jumpPoints = 3;
+            const jumpHeight = 3;
+            
+            for (let i = 0; i < jumpPoints; i++) {
+                const height = basePosition.y + (i === 1 ? jumpHeight : 0);
+                const position = {
+                    x: basePosition.x,
+                    y: height,
+                    z: basePosition.z + i * 3
+                };
+                this.createCoin(position);
+            }
+            break;
+    }
+}
 }
