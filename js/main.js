@@ -1,23 +1,47 @@
 // Ponto de entrada da aplicação
-let game;
 let totalCoins = 0;
 let playerName = "";
+let totalTimePlayed = 0;
+let totalObstaclesPassed = 0;
+let totalTurnsMade = 0;
+let gamesPlayed = 0;
 
 let ownedCars = ['default']; // Carros que o jogador possui
 let selectedCar = 'default'; // Carro atualmente selecionado
 
 // Função para inicializar o jogo quando a página carregar
-// Modificar a função initGame para carregar os dados dos carros
+// Função para inicializar o jogo quando a página carregar
 function initGame() {
-    // Verificar se é a primeira vez que o usuário acessa o jogo
-    checkFirstVisit();
-    
-    // Carregar dados dos carros
-    loadOwnedCars();
-    loadSelectedCar();
-    
-    // Configurar os botões da tela de boas-vindas
-    setupWelcomeScreen();
+    // Verificar se o usuário está autenticado
+    checkAuthState((user) => {
+        if (user) {
+            // Usuário já está logado
+            playerName = user.displayName || user.email.split('@')[0];
+            
+            // Carregar dados do usuário do Firestore
+            getUserData(user.uid).then((userData) => {
+                if (userData) {
+                    // Carregar dados salvos
+                    if (userData.totalCoins !== undefined) totalCoins = userData.totalCoins;
+                    if (userData.ownedCars) ownedCars = userData.ownedCars;
+                    if (userData.selectedCar) selectedCar = userData.selectedCar;
+                    if (userData.totalTimePlayed) totalTimePlayed = userData.totalTimePlayed;
+                    if (userData.totalObstaclesPassed) totalObstaclesPassed = userData.totalObstaclesPassed;
+                    if (userData.totalTurnsMade) totalTurnsMade = userData.totalTurnsMade;
+                    if (userData.gamesPlayed) gamesPlayed = userData.gamesPlayed;
+                }
+                
+                // Esconder a tela de boas-vindas
+                document.getElementById('welcome-screen').style.display = 'none';
+                
+                // Iniciar o jogo
+                startGame();
+            });
+        } else {
+            // Usuário não está logado, mostrar tela de boas-vindas
+            setupWelcomeScreen();
+        }
+    });
     
     // Configurar os botões da loja
     setupShopScreen();
@@ -129,10 +153,26 @@ function selectCar(event) {
 
 // Funções para salvar/carregar dados dos carros
 function saveOwnedCars() {
-    localStorage.setItem('driftRaceOwnedCars', JSON.stringify(ownedCars));
+    const user = getCurrentUser();
+    
+    if (user) {
+        // Salvar no Firestore (já incluído em saveUserData)
+        saveUserData();
+    } else {
+        // Fallback para localStorage
+        localStorage.setItem('driftRaceOwnedCars', JSON.stringify(ownedCars));
+    }
 }
 
 function loadOwnedCars() {
+    const user = getCurrentUser();
+    
+    if (user) {
+        // Dados já carregados do Firestore
+        return;
+    }
+    
+    // Fallback para localStorage
     const saved = localStorage.getItem('driftRaceOwnedCars');
     if (saved) {
         ownedCars = JSON.parse(saved);
@@ -140,16 +180,31 @@ function loadOwnedCars() {
 }
 
 function saveSelectedCar() {
-    localStorage.setItem('driftRaceSelectedCar', selectedCar);
+    const user = getCurrentUser();
+    
+    if (user) {
+        // Salvar no Firestore
+        saveUserData();
+    } else {
+        // Fallback para localStorage
+        localStorage.setItem('driftRaceSelectedCar', selectedCar);
+    }
 }
 
 function loadSelectedCar() {
+    const user = getCurrentUser();
+    
+    if (user) {
+        // Dados já carregados do Firestore
+        return;
+    }
+    
+    // Fallback para localStorage
     const saved = localStorage.getItem('driftRaceSelectedCar');
     if (saved) {
         selectedCar = saved;
     }
 }
-
 
 // Verificar se é a primeira visita do usuário
 function checkFirstVisit() {
@@ -166,35 +221,58 @@ function checkFirstVisit() {
 
 // Configurar os botões da tela de boas-vindas
 function setupWelcomeScreen() {
-    // Botão para iniciar o jogo
-    document.getElementById('start-game-btn').addEventListener('click', function() {
-        const nameInput = document.getElementById('name-input');
-        playerName = nameInput.value.trim();
-        
-        if (playerName) {
-            // Salvar o nome do jogador
-            localStorage.setItem('driftRacePlayerName', playerName);
-            
-            // Esconder a tela de boas-vindas
-            document.getElementById('welcome-screen').style.display = 'none';
-            
-            // Iniciar o jogo
-            startGame();
-        } else {
-            alert('Por favor, digite seu nome para continuar.');
-        }
+    // Adicionar botão de login com Google
+    const googleLoginBtn = document.createElement('button');
+    googleLoginBtn.id = 'google-login-btn';
+    googleLoginBtn.innerHTML = '<img src="assets/google-icon.png" alt="Google" width="20" height="20"> Entrar com Google';
+    googleLoginBtn.style.backgroundColor = '#4285F4';
+    googleLoginBtn.style.color = 'white';
+    googleLoginBtn.style.border = 'none';
+    googleLoginBtn.style.padding = '10px 20px';
+    googleLoginBtn.style.borderRadius = '5px';
+    googleLoginBtn.style.cursor = 'pointer';
+    googleLoginBtn.style.fontSize = '1rem';
+    googleLoginBtn.style.marginTop = '10px';
+    googleLoginBtn.style.display = 'flex';
+    googleLoginBtn.style.alignItems = 'center';
+    googleLoginBtn.style.justifyContent = 'center';
+    googleLoginBtn.style.gap = '10px';
+    
+    // Adicionar o botão à primeira seção de boas-vindas
+    const welcomeSection = document.querySelector('.welcome-section');
+    
+    // Limpar o conteúdo existente da seção de boas-vindas
+    welcomeSection.innerHTML = '<h2>Bem-vindo ao Jogo!</h2><p>Entre com sua conta Google para começar:</p>';
+    
+    // Adicionar o botão de login com Google
+    welcomeSection.appendChild(googleLoginBtn);
+    
+    // Adicionar evento de clique para login com Google
+    googleLoginBtn.addEventListener('click', () => {
+        loginWithGoogle()
+            .then((user) => {
+                playerName = user.displayName || user.email.split('@')[0];
+                
+                // Esconder a tela de boas-vindas
+                document.getElementById('welcome-screen').style.display = 'none';
+                
+                // Iniciar o jogo
+                startGame();
+            })
+            .catch((error) => {
+                alert('Erro ao fazer login: ' + error.message);
+            });
     });
     
     // Botão para patrocinar
     document.getElementById('sponsor-btn').addEventListener('click', function() {
-        // Abrir página de patrocínio ou formulário de contato
         window.open('https://abacatepay.com/pay/bill_shn66fGZChStgc4HwzbRAUGx', '_blank');
     });
 }
 
 // Iniciar o jogo
 function startGame() {
-    // Carregar moedas do localStorage
+    // Carregar moedas do localStorage ou Firestore
     loadCoins();
     
     // Criar nova instância do jogo
@@ -205,6 +283,9 @@ function startGame() {
         if (game) {
             game.cleanup();
         }
+        
+        // Salvar dados do usuário
+        saveUserData();
     });
     
     // Criar e adicionar o contador de moedas total
@@ -213,8 +294,98 @@ function startGame() {
     // Mostrar mensagem de boas-vindas com o nome do jogador
     showWelcomeMessage();
     
+    // Adicionar botão de logout
+    addLogoutButton();
+    
     // Log para indicar que o jogo foi inicializado
     console.log('Drift Race 3D inicializado para ' + playerName);
+}
+
+// Adicionar botão de logout
+function addLogoutButton() {
+    const user = getCurrentUser();
+    if (!user) return;
+    
+    const logoutBtn = document.createElement('button');
+    logoutBtn.id = 'logout-btn';
+    logoutBtn.textContent = 'Sair';
+    
+    // Estilizar o botão
+    logoutBtn.style.position = 'fixed';
+    logoutBtn.style.top = '10px';
+    logoutBtn.style.left = '10px';
+    logoutBtn.style.backgroundColor = '#f44336';
+    logoutBtn.style.color = 'white';
+    logoutBtn.style.border = 'none';
+    logoutBtn.style.padding = '5px 10px';
+    logoutBtn.style.borderRadius = '5px';
+    logoutBtn.style.cursor = 'pointer';
+    logoutBtn.style.zIndex = '1000';
+    
+    document.body.appendChild(logoutBtn);
+    
+    // Adicionar evento de clique
+    logoutBtn.addEventListener('click', () => {
+        // Salvar dados antes de sair
+        saveUserData();
+        
+        logout().then(() => {
+            // Recarregar a página após logout
+            window.location.reload();
+        });
+    });
+}
+
+// Salvar dados do usuário no Firestore
+function saveUserData() {
+    const user = getCurrentUser();
+    if (!user) return;
+    
+    const userData = {
+        username: playerName,
+        totalCoins: totalCoins,
+        ownedCars: ownedCars,
+        selectedCar: selectedCar,
+        totalTimePlayed: totalTimePlayed,
+        totalObstaclesPassed: totalObstaclesPassed,
+        totalTurnsMade: totalTurnsMade,
+        gamesPlayed: gamesPlayed,
+        lastUpdated: new Date()
+    };
+    
+    saveUserDataToFirestore(user.uid, userData)
+        .catch(error => console.error("Erro ao salvar dados:", error));
+}
+
+// Carregar moedas do localStorage ou Firestore
+function loadCoins() {
+    const user = getCurrentUser();
+    
+    if (user) {
+        // Se o usuário estiver logado, os dados já foram carregados do Firestore
+        return;
+    }
+    
+    // Fallback para localStorage se não estiver logado
+    const savedCoins = localStorage.getItem('driftRaceCoins');
+    if (savedCoins !== null) {
+        totalCoins = parseInt(savedCoins);
+    } else {
+        totalCoins = 0;
+    }
+}
+
+// Salvar moedas no localStorage ou Firestore
+function saveCoins() {
+    const user = getCurrentUser();
+    
+    if (user) {
+        // Salvar no Firestore
+        saveUserData();
+    } else {
+        // Fallback para localStorage
+        localStorage.setItem('driftRaceCoins', totalCoins.toString());
+    }
 }
 
 // Mostrar mensagem de boas-vindas temporária

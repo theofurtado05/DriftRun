@@ -328,46 +328,61 @@ updateCarModel(carType) {
         document.getElementById('obstacles').textContent = '0';
     }
     
+    // Modificar a função showGameOver para atualizar estatísticas
     showGameOver() {
-        // Atualizar estatísticas finais
-        document.getElementById('total-time').textContent = Math.floor(this.elapsedTime);
-        document.getElementById('total-coins').textContent = this.coins;
-        document.getElementById('total-turns').textContent = this.track.getTurnCount();
-        document.getElementById('total-obstacles').textContent = this.obstacleManager.getAvoidedCount();
+    // Atualizar estatísticas finais
+    const gameTime = Math.floor(this.elapsedTime);
+    const gameCoins = this.coins;
+    const gameTurns = this.track.getTurnCount();
+    const gameObstacles = this.obstacleManager.getAvoidedCount();
+    
+    document.getElementById('total-time').textContent = gameTime;
+    document.getElementById('total-coins').textContent = gameCoins;
+    document.getElementById('total-turns').textContent = gameTurns;
+    document.getElementById('total-obstacles').textContent = gameObstacles;
+    
+    // Atualizar estatísticas globais
+    totalTimePlayed += gameTime;
+    totalObstaclesPassed += gameObstacles;
+    totalTurnsMade += gameTurns;
+    gamesPlayed += 1;
+    
+    // Adicionar moedas coletadas ao total
+    addCoins(gameCoins);
+    
+    // Salvar dados no Firestore
+    saveUserData();
+    
+    // Mostrar modal de game over
+    document.getElementById('game-over').style.display = 'block';
+    
+    // Verificar se o botão da loja já existe
+    if (!document.getElementById('open-shop-btn')) {
+        // Adicionar botão para abrir a loja
+        const shopButton = document.createElement('button');
+        shopButton.id = 'open-shop-btn';
+        shopButton.textContent = 'Loja de Carros';
+        shopButton.style.marginTop = '10px';
+        shopButton.style.backgroundColor = '#FFC107';
+        shopButton.style.color = 'black';
+        shopButton.style.border = 'none';
+        shopButton.style.padding = '10px 20px';
+        shopButton.style.borderRadius = '5px';
+        shopButton.style.cursor = 'pointer';
         
-        // Adicionar moedas coletadas ao total
-        addCoins(this.coins);
+        // Adicionar evento de clique para abrir a loja
+        shopButton.addEventListener('click', () => {
+            document.getElementById('game-over').style.display = 'none';
+            openShop();
+        });
         
-        // Mostrar modal de game over
-        document.getElementById('game-over').style.display = 'block';
-        
-        // Verificar se o botão da loja já existe
-        if (!document.getElementById('open-shop-btn')) {
-            // Adicionar botão para abrir a loja
-            const shopButton = document.createElement('button');
-            shopButton.id = 'open-shop-btn';
-            shopButton.textContent = 'Loja de Carros';
-            shopButton.style.marginTop = '10px';
-            shopButton.style.backgroundColor = '#FFC107';
-            shopButton.style.color = 'black';
-            shopButton.style.border = 'none';
-            shopButton.style.padding = '10px 20px';
-            shopButton.style.borderRadius = '5px';
-            shopButton.style.cursor = 'pointer';
-            
-            // Adicionar evento de clique para abrir a loja
-            shopButton.addEventListener('click', () => {
-                document.getElementById('game-over').style.display = 'none';
-                openShop();
-            });
-            
-            // Adicionar botão ao modal de game over
-            document.getElementById('game-over').appendChild(shopButton);
-        }
-
-        // Parar o carro
-        this.car.speed = 0;
+        // Adicionar botão ao modal de game over
+        document.getElementById('game-over').appendChild(shopButton);
     }
+
+    // Parar o carro
+    this.car.speed = 0;
+}
     
     update(deltaTime) {
         if (!this.gameActive) return;

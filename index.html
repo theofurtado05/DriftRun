@@ -218,9 +218,8 @@
         
         <div class="welcome-section">
             <h2>Bem-vindo ao Jogo!</h2>
-            <p>Digite seu nome para começar a corrida:</p>
-            <input type="text" id="name-input" placeholder="Seu nome">
-            <button id="start-game-btn">Iniciar Jogo</button>
+            <p>Entre com sua conta Google para começar:</p>
+            <!-- O botão de login com Google será adicionado via JavaScript -->
         </div>
         
         <div class="welcome-section">
@@ -290,6 +289,15 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Adicionar scripts do Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+
     <script src="js/config.js"></script>
     <script src="js/car.js"></script>
     <script src="js/track.js"></script>
