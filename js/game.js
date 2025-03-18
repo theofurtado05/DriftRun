@@ -159,19 +159,41 @@ updateCarModel(carType) {
     }
     
     
-    handleKeyDown(event) {
-        if (event.key === 'ArrowLeft') {
-            this.inputDirection = -1;
-        } else if (event.key === 'ArrowRight') {
-            this.inputDirection = 1;
+    handleKeyDown(e) {
+        if (!this.gameActive) return;
+        
+        // Verificar se estamos usando controles móveis
+        if (this.mobileControls && this.mobileControls.isActive) {
+            // Se estamos no mobile, não processar teclas
+            return;
+        }
+        
+        switch(e.key) {
+            case 'ArrowLeft':
+                this.inputDirection = -1;
+                break;
+            case 'ArrowRight':
+                this.inputDirection = 1;
+                break;
         }
     }
     
-    handleKeyUp(event) {
-        if (event.key === 'ArrowLeft' && this.inputDirection === -1) {
-            this.inputDirection = 0;
-        } else if (event.key === 'ArrowRight' && this.inputDirection === 1) {
-            this.inputDirection = 0;
+    handleKeyUp(e) {
+        if (!this.gameActive) return;
+        
+        // Verificar se estamos usando controles móveis
+        if (this.mobileControls && this.mobileControls.isActive) {
+            // Se estamos no mobile, não processar teclas
+            return;
+        }
+        
+        switch(e.key) {
+            case 'ArrowLeft':
+                if (this.inputDirection === -1) this.inputDirection = 0;
+                break;
+            case 'ArrowRight':
+                if (this.inputDirection === 1) this.inputDirection = 0;
+                break;
         }
     }
     
@@ -288,6 +310,12 @@ updateCarModel(carType) {
     
     update(deltaTime) {
         if (!this.gameActive) return;
+        
+        // Atualizar elementos do jogo
+        this.elapsedTime += deltaTime;
+        
+        // Atualizar carro
+        this.car.update(deltaTime, this.inputDirection);
     
         // Atualizar tempo e moedas
         this.elapsedTime += deltaTime;
@@ -312,8 +340,7 @@ updateCarModel(carType) {
         // Atualizar contador de obstáculos
         document.getElementById('obstacles').textContent = this.obstacleManager.getAvoidedCount();
         
-        // Atualizar carro
-        this.car.update(deltaTime, this.inputDirection);
+        
         
         // Aumentar dificuldade gradualmente com base na pontuação
         this.car.increaseDifficulty(this.obstacleManager.getAvoidedCount());

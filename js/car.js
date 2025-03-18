@@ -214,15 +214,32 @@ class Car {
     
     update(deltaTime, inputDirection) {
         // Atualizar posição do carro com base na velocidade
+        const currentSegment = this.position
+        const forwardDistance = this.speed * deltaTime;
+
         this.position.z += this.speed * deltaTime;
-        
-        // Aplicar movimento lateral direto baseado no input
-        this.position.x += inputDirection * CONFIG.car.lateralSpeed * deltaTime;
-        
-        // Aplicar drift com base na entrada do usuário (para efeito visual)
+
+        console.log("This: ", this)
+
+        let segmentAngle = 0;
+        if(currentSegment){
+            segmentAngle = this.rotation || 0;
+        }
+
+        // Mover o carro para frente na direção da pista
+        this.position.x += Math.sin(segmentAngle) * forwardDistance;
+        this.position.z += Math.cos(segmentAngle) * forwardDistance;
+
+        // Aplicar movimento lateral com base no input do jogador
         if (inputDirection !== 0) {
-            // Aumentar o drift na direção do input
-            this.driftForce += inputDirection * CONFIG.car.rotationSpeed;
+            // Aumentar a velocidade lateral para controles móveis
+            const mobileMultiplier = 1.5;
+            const lateralDistance = inputDirection * CONFIG.car.lateralSpeed * deltaTime * mobileMultiplier;
+            this.position.x += Math.sin(segmentAngle + Math.PI/2) * lateralDistance;
+            this.position.z += Math.cos(segmentAngle + Math.PI/2) * lateralDistance;
+            
+            // Aumentar o drift para feedback visual
+            this.driftForce += inputDirection * CONFIG.car.rotationSpeed * 1.2;
         } else {
             // Reduzir o drift gradualmente quando não há input
             this.driftForce *= CONFIG.car.driftRecoveryRate;

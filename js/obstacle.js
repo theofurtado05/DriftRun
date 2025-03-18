@@ -89,7 +89,28 @@ class ObstacleManager {
         
         // Posicionar obstáculo
         const trackHalfWidth = CONFIG.track.width / 2 - 1;
-        const randomX = (Math.random() * trackHalfWidth * 2) - trackHalfWidth;
+        
+        // Tentar encontrar uma posição válida para o obstáculo
+        let validPosition = false;
+        let attempts = 0;
+        let randomX = 0;
+        
+        while (!validPosition && attempts < 10) {
+            // Gerar posição aleatória
+            randomX = (Math.random() * trackHalfWidth * 2) - trackHalfWidth;
+            
+            // Verificar se podemos criar um obstáculo nesta posição
+            if (this.canCreateObstacleAt(randomX, zPosition)) {
+                validPosition = true;
+            }
+            
+            attempts++;
+        }
+        
+        // Se não encontrou posição válida após várias tentativas, não criar o obstáculo
+        if (!validPosition) {
+            return null;
+        }
         
         obstacle.position.set(randomX, 1, zPosition);
         obstacle.castShadow = true;
@@ -108,58 +129,84 @@ class ObstacleManager {
     
     update(deltaTime, carPosition) {
          // Aumentar a dificuldade com base no tempo ou pontuação
-         this.increaseDifficulty(this.avoidedCount);
+        this.increaseDifficulty(this.avoidedCount);
         
-         // Adicionar novo obstáculo com base no intervalo
-         this.lastObstacleTime += deltaTime;
-         
-         if (this.lastObstacleTime > this.obstacleInterval) {
-             // Zerar contador
-             this.lastObstacleTime = 0;
-             
-             // Criar novo obstáculo
-             const nextZ = carPosition.z + 100 + Math.random() * 50;
-             this.createObstacle(nextZ);
-             
-             // Chance de criar obstáculos adicionais com base na dificuldade
-             if (Math.random() < this.getDifficultyMultiplier() * 0.2) {
-                 const offsetX = (Math.random() > 0.5) ? 4 : -4;
-                 const additionalZ = nextZ + (Math.random() * 10) - 5;
-                 const obstacle = this.createObstacle(additionalZ);
-                 obstacle.position.x += offsetX;
-             }
-         }
+        // Adicionar novo obstáculo com base no intervalo
+        this.lastObstacleTime += deltaTime;
+        
+        if (this.lastObstacleTime > this.obstacleInterval) {
+            // Zerar contador
+            this.lastObstacleTime = 0;
+            
+            // Criar novo obstáculo
+            const nextZ = carPosition.z + CONFIG.obstacles.spawnDistance + 
+                        (Math.random() * CONFIG.obstacles.randomSpawnRange);
+            this.createObstacle(nextZ);
+        }
          
          // Verificar obstáculos para remoção
          const obstaclesToRemove = [];
          
          for (let i = 0; i < this.obstacles.length; i++) {
-             const obstacle = this.obstacles[i];
-             
-             // Verificar se o carro já passou do obstáculo
-             if (!obstacle.passed && obstacle.position.z < carPosition.z - 5) {
-                 obstacle.passed = true;
-                 this.avoidedCount++;
-             }
-             
-             // Se o obstáculo está muito atrás do carro, marcamos para remoção
-             if (obstacle.position.z < carPosition.z - 50) {
-                 obstaclesToRemove.push(i);
-             }
-         }
-         
-         // Remover obstáculos antigos (do último para o primeiro para não afetar os índices)
-         for (let i = obstaclesToRemove.length - 1; i >= 0; i--) {
-             const index = obstaclesToRemove[i];
-             const obstacle = this.obstacles[index];
-             
-             // Remover o mesh da cena
-             this.scene.remove(obstacle.mesh);
-             
-             // Remover da lista de obstáculos
-             this.obstacles.splice(index, 1);
-         }
+            const obstacle = this.obstacles[i];
+            
+            // Verificar se o carro já passou do obstáculo
+            if (!obstacle.passed && obstacle.position.z < carPosition.z - 5) {
+                obstacle.passed = true;
+                this.avoidedCount++;
+            }
+            
+            // Se o obstáculo está muito atrás do carro, marcamos para remoção
+            if (obstacle.position.z < carPosition.z - 50) {
+                obstaclesToRemove.push(i);
+            }
+        }
+        
+        // Remover obstáculos antigos (do último para o primeiro para não afetar os índices)
+        for (let i = obstaclesToRemove.length - 1; i >= 0; i--) {
+            const index = obstaclesToRemove[i];
+            const obstacle = this.obstacles[index];
+            
+            // Remover o mesh da cena
+            this.scene.remove(obstacle.mesh);
+            
+            // Remover da lista de obstáculos
+            this.obstacles.splice(index, 1);
+        }
     }
+
+    // Adicionar um novo método para verificar se um obstáculo pode ser criado em uma posição
+    canCreateObstacleAt(x, z) {
+        // Usar as configurações definidas
+        const minLateralDistance = CONFIG.obstacles.minLateralDistance;
+        const minLongitudinalDistance = CONFIG.obstacles.minLongitudinalDistance;
+        
+        for (const obstacle of this.obstacles) {
+            // Verificar distância lateral
+            const dx = Math.abs(x - obstacle.position.x);
+            
+            // Verificar distância longitudinal
+            const dz = Math.abs(z - obstacle.position.z);
+            
+            // Se ambas as distâncias forem menores que o mínimo, não permitir criar
+            if (dx < minLateralDistance && dz < minLongitudinalDistance) {
+                return false;
+            }
+        }
+        
+        // Verificar também se o obstáculo não está muito próximo das bordas da pista
+        const trackHalfWidth = CONFIG.track.width / 2;
+        const obstacleHalfWidth = CONFIG.obstacles.maxWidth / 2;
+        const minDistanceFromEdge = 1.5; // Distância mínima da borda
+        
+        if (Math.abs(x) > trackHalfWidth - obstacleHalfWidth - minDistanceFromEdge) {
+            return false;
+        }
+        
+        return true;
+    }
+
+
 
      // Aumentar a dificuldade com base na pontuação
      increaseDifficulty(score) {

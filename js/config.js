@@ -1,18 +1,15 @@
-// Configurações do jogo
 const CONFIG = {
     // Configurações do carro
     car: {
-        speed: 16,
-        maxSpeed: 20,
-        acceleration: 0.5,
-        maxDriftForce: 2,
-        driftRecoveryRate: 0.98,
-        rotationSpeed: 0.03,
-        damping: 0.95,
         width: 2,
-        length: 4,
         height: 1,
-        lateralSpeed: 4,
+        length: 4,
+        speed: 20, // Velocidade base
+        maxSpeed: 50,
+        lateralSpeed: 5, // Aumentado para melhor resposta
+        rotationSpeed: 0.05, // Aumentado para curvas mais responsivas
+        driftRecoveryRate: 0.9, // Ajustado para drift mais persistente
+        maxDriftForce: 0.5 // Aumentado para efeito visual mais forte
     },
     
     // Configurações da pista
@@ -30,9 +27,18 @@ const CONFIG = {
     game: {
         coinInterval: 10, // segundos
         difficultyIncrease: 0.01, // Aumento base de velocidade por frame
-        initialObstacleInterval: 2,  // segundos
-        maxObstacleInterval: 0.5,    // segundos (intervalo mínimo entre obstáculos)
+        initialObstacleInterval: 2.5,  // segundos (aumentado para dar mais espaço)
+        maxObstacleInterval: 0.8,    // segundos (intervalo mínimo entre obstáculos - aumentado)
         maxDifficultyLevel: 10
+    },
+    
+    // Configurações de obstáculos
+    obstacles: {
+        minLateralDistance: 6, // Distância mínima lateral entre obstáculos
+        minLongitudinalDistance: 5, // Distância mínima na direção Z entre obstáculos
+        maxWidth: 3, // Largura máxima de um obstáculo
+        spawnDistance: 30, // Distância à frente do carro onde os obstáculos aparecem
+        randomSpawnRange: 30 // Variação aleatória na distância de spawn
     },
     
     // Configurações da câmera
