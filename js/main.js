@@ -220,13 +220,14 @@ function checkFirstVisit() {
 }
 
 // Configurar os botões da tela de boas-vindas
+// Configurar os botões da tela de boas-vindas
 function setupWelcomeScreen() {
     // Adicionar botão de login com Google
     const googleLoginBtn = document.createElement('button');
     googleLoginBtn.id = 'google-login-btn';
-    googleLoginBtn.innerHTML = '<img src="assets/google-icon.png" alt="Google" width="20" height="20"> Entrar com Google';
-    googleLoginBtn.style.backgroundColor = '#4285F4';
-    googleLoginBtn.style.color = 'white';
+    googleLoginBtn.innerHTML = '<img src="https://img.icons8.com/?size=512&id=17949&format=png" alt="Google" width="20" height="20"> Entrar com Google';
+    googleLoginBtn.style.backgroundColor = 'white';
+    googleLoginBtn.style.color = '#4285F4';
     googleLoginBtn.style.border = 'none';
     googleLoginBtn.style.padding = '10px 20px';
     googleLoginBtn.style.borderRadius = '5px';
@@ -237,12 +238,19 @@ function setupWelcomeScreen() {
     googleLoginBtn.style.alignItems = 'center';
     googleLoginBtn.style.justifyContent = 'center';
     googleLoginBtn.style.gap = '10px';
+    googleLoginBtn.style.margin = '10px auto'; // Adiciona margem automática nas laterais
     
     // Adicionar o botão à primeira seção de boas-vindas
     const welcomeSection = document.querySelector('.welcome-section');
     
     // Limpar o conteúdo existente da seção de boas-vindas
     welcomeSection.innerHTML = '<h2>Bem-vindo ao Jogo!</h2><p>Entre com sua conta Google para começar:</p>';
+    
+    // Configurar a seção de boas-vindas para centralizar o conteúdo
+    welcomeSection.style.display = 'flex';
+    welcomeSection.style.flexDirection = 'column';
+    welcomeSection.style.alignItems = 'center';
+    welcomeSection.style.textAlign = 'center';
     
     // Adicionar o botão de login com Google
     welcomeSection.appendChild(googleLoginBtn);
