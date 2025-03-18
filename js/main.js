@@ -305,8 +305,7 @@ function startGame() {
     // Mostrar mensagem de boas-vindas com o nome do jogador
     showWelcomeMessage();
     
-    // Adicionar botão de logout
-    addLogoutButton();
+    
     
     // Log para indicar que o jogo foi inicializado
     console.log('Drift Race 3D inicializado para ' + playerName);
@@ -323,7 +322,7 @@ function addLogoutButton() {
     
     // Estilizar o botão
     logoutBtn.style.position = 'fixed';
-    logoutBtn.style.top = '10px';
+    logoutBtn.style.top = '50px';
     logoutBtn.style.left = '10px';
     logoutBtn.style.backgroundColor = '#f44336';
     logoutBtn.style.color = 'white';
@@ -346,6 +345,15 @@ function addLogoutButton() {
         });
     });
 }
+
+function removeLogoutButton() {
+    const logoutBtn = document.getElementById('logout-btn');
+    if (!logoutBtn) return;
+    
+    logoutBtn.remove();
+}
+
+
 
 // Salvar dados do usuário no Firestore
 function saveUserData() {

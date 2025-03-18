@@ -299,7 +299,9 @@ updateCarModel(carType) {
     restart() {
         // Esconder game over
         document.getElementById('game-over').style.display = 'none';
-        
+
+        removeLogoutButton()
+
         // Resetar elementos do jogo
         this.car.reset();
         this.track.reset();
@@ -330,6 +332,8 @@ updateCarModel(carType) {
     
     // Modificar a função showGameOver para atualizar estatísticas
     showGameOver() {
+        // Adicionar botão de logout
+        addLogoutButton();
         // Atualizar estatísticas finais
         const gameTime = Math.floor(this.elapsedTime);
         const gameCoins = this.coins;
