@@ -440,7 +440,7 @@ updateCarModel(carType) {
         window.addEventListener('keydown', this.keyDownHandler);
         window.addEventListener('keyup', this.keyUpHandler);
         
-        // Event listeners para touch (mesmo se estiver usando controles móveis)
+        // Event listeners para touch
         document.getElementById('game-container').addEventListener('touchstart', this.touchStartHandler, { passive: false });
         document.getElementById('game-container').addEventListener('touchmove', this.touchMoveHandler, { passive: false });
         document.getElementById('game-container').addEventListener('touchend', this.touchEndHandler, { passive: false });
@@ -448,17 +448,27 @@ updateCarModel(carType) {
         // Event listener para redimensionamento da janela
         window.addEventListener('resize', this.resizeHandler);
         
-        // Event listener para botão de reinício
-        document.getElementById('restart-button').addEventListener('click', () => this.restart());
+        // Event listener para botão de reinício com stopPropagation
+        const restartButton = document.getElementById('restart-button');
+        if (restartButton) {
+            restartButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                this.restart();
+            });
+        }
     }
     
     removeEventListeners() {
         window.removeEventListener('keydown', this.keyDownHandler);
         window.removeEventListener('keyup', this.keyUpHandler);
         
-        document.getElementById('game-container').removeEventListener('touchstart', this.touchStartHandler);
-        document.getElementById('game-container').removeEventListener('touchmove', this.touchMoveHandler);
-        document.getElementById('game-container').removeEventListener('touchend', this.touchEndHandler);
+        const gameContainer = document.getElementById('game-container');
+        if (gameContainer) {
+            gameContainer.removeEventListener('touchstart', this.touchStartHandler);
+            gameContainer.removeEventListener('touchmove', this.touchMoveHandler);
+            gameContainer.removeEventListener('touchend', this.touchEndHandler);
+        }
         
         window.removeEventListener('resize', this.resizeHandler);
     }
@@ -568,6 +578,7 @@ updateCarModel(carType) {
     
     stop() {
         this.gameActive = false;
+        this.removeEventListeners(); // Remover os event listeners antes de mostrar o game over
         this.showGameOver();
     }
     

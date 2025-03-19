@@ -34,6 +34,7 @@ body {
 }
 
 #game-over {
+    z-index: 3000 !important;
     position: absolute;
     top: 50%;
     left: 50%;
@@ -43,18 +44,19 @@ body {
     padding: 20px;
     border-radius: 10px;
     text-align: center;
-    z-index: 20;
     display: none;
     flex-direction: row;
     justify-content: center;
     align-items: center;
     gap: 20px;
+    pointer-events: auto;
 }
 
 /* Aplicar flex-direction: column no mobile */
 @media (max-width: 768px) {
     #game-over {
         flex-direction: column;
+        z-index: 3000 !important;
     }
 }
 
@@ -488,20 +490,9 @@ body {
     }
 }
 
-/* Estilos para o aviso de AdBlock */
-#adblock-warning {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: rgba(0, 0, 0, 0.9);
-    color: white;
-    padding: 20px;
-    border-radius: 10px;
-    text-align: center;
-    z-index: 1000;
-    width: 80%;
-    max-width: 400px;
-    z-index: 9999999;
+
+#restart-button {
+    position: relative;
+    z-index: 1000; /* Garantir que o botão esteja acima de outros elementos */
+    touch-action: manipulation; /* Melhorar resposta de toque */
 }
