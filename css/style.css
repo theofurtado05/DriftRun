@@ -174,3 +174,266 @@ body {
         font-size: 30px;
     }
 }
+
+
+        #welcome-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            color: white;
+            text-align: center;
+        }
+        
+        #welcome-screen h1 {
+            color: #FF5722;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 10px rgba(255, 87, 34, 0.7);
+        }
+        
+        .welcome-section {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .welcome-section h2 {
+            color: #FFC107;
+            margin-bottom: 15px;
+        }
+        
+        #name-input {
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            margin: 10px 0;
+            width: 80%;
+            font-size: 1rem;
+        }
+        
+        #start-game-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        
+        #start-game-btn:hover {
+            background-color: #45a049;
+        }
+        
+        #sponsor-btn {
+            background-color: #FFC107;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        
+        #sponsor-btn:hover {
+            background-color: #FFB300;
+        }
+
+        #shop-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        display: flex;
+        flex-direction: column;
+        z-index: 2000;
+        color: white;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .shop-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+    
+    .shop-header h2 {
+        color: #FFC107;
+        margin: 0;
+    }
+    
+    .shop-coins {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: gold;
+        font-weight: bold;
+    }
+    
+    #shop-close-btn {
+        background-color: #f44336;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    .shop-items {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    
+    .car-item {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 15px;
+        width: 250px;
+        transition: transform 0.3s;
+    }
+    
+    .car-item:hover {
+        transform: scale(1.05);
+    }
+    
+    .car-preview {
+        height: 150px;
+        margin-bottom: 10px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+    
+    .default-car {
+        background-image: url('assets/car-red.png');
+    }
+    
+    .beetle-car {
+        background-image: url('assets/car-yellow.png');
+    }
+    
+    .lambo-car {
+        background-image: url('assets/car-orange.png');
+    }
+    
+    .car-item h3 {
+        color: #FFC107;
+        margin: 10px 0;
+    }
+    
+    .car-item p {
+        margin: 5px 0 15px 0;
+    }
+    
+    .buy-car-btn, .select-car-btn {
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        width: 100%;
+    }
+    
+    .buy-car-btn {
+        background-color: #4CAF50;
+        color: white;
+    }
+    
+    .buy-car-btn:disabled {
+        background-color: #cccccc;
+        color: #666666;
+        cursor: not-allowed;
+    }
+    
+    .select-car-btn {
+        background-color: #2196F3;
+        color: white;
+    }
+    
+    .select-car-btn.selected {
+        background-color: #FFC107;
+        color: black;
+    }
+
+    /* Novo estilo para o card de identificação */
+    #author-card {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: rgba(0, 0, 0, 0.7);
+        border-radius: 10px;
+        padding: 10px;
+        width: 150px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        transition: transform 0.3s, box-shadow 0.3s;
+        cursor: pointer;
+    }
+    
+    #author-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.7);
+    }
+    
+    #author-card h3 {
+        margin: 0 0 10px 0;
+        font-size: 14px;
+        color: #FFC107;
+    }
+    
+    .author-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .author-photo {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #FFC107;
+    }
+    
+    .author-name {
+        flex-grow: 1;
+        margin-left: 10px;
+        font-size: 12px;
+        text-align: left;
+    }
+    
+    .linkedin-icon {
+        width: 20px;
+        height: 20px;
+        margin-left: 5px;
+        fill: #0077B5;
+    }
+    
