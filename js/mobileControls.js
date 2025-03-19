@@ -22,8 +22,9 @@ class MobileControls {
     }
     
     checkMobile() {
-        // return false
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        //implementar em breve pra melhorar a jogabilidade no mobile
+        return false
+        // return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     }
     
     init() {
