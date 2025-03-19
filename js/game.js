@@ -47,7 +47,10 @@ class Game {
         this.touchStartHandler = this.handleTouchStart.bind(this);
         this.touchMoveHandler = this.handleTouchMove.bind(this);
         this.resizeHandler = this.handleResize.bind(this);
-        
+        this.touchEndHandler = this.handleTouchEnd.bind(this);
+
+
+
         // Inicializar
         this.init();
         this.setupEventListeners();
@@ -437,11 +440,10 @@ updateCarModel(carType) {
         window.addEventListener('keydown', this.keyDownHandler);
         window.addEventListener('keyup', this.keyUpHandler);
         
-        // Event listeners para touch (apenas se não estiver usando controles móveis)
-        if (!this.mobileControls || !this.mobileControls.isActive) {
-            window.addEventListener('touchstart', this.touchStartHandler);
-            window.addEventListener('touchmove', this.touchMoveHandler);
-        }
+        // Event listeners para touch (mesmo se estiver usando controles móveis)
+        document.getElementById('game-container').addEventListener('touchstart', this.touchStartHandler, { passive: false });
+        document.getElementById('game-container').addEventListener('touchmove', this.touchMoveHandler, { passive: false });
+        document.getElementById('game-container').addEventListener('touchend', this.touchEndHandler, { passive: false });
         
         // Event listener para redimensionamento da janela
         window.addEventListener('resize', this.resizeHandler);
@@ -454,13 +456,13 @@ updateCarModel(carType) {
         window.removeEventListener('keydown', this.keyDownHandler);
         window.removeEventListener('keyup', this.keyUpHandler);
         
-        if (!this.mobileControls || !this.mobileControls.isActive) {
-            window.removeEventListener('touchstart', this.touchStartHandler);
-            window.removeEventListener('touchmove', this.touchMoveHandler);
-        }
+        document.getElementById('game-container').removeEventListener('touchstart', this.touchStartHandler);
+        document.getElementById('game-container').removeEventListener('touchmove', this.touchMoveHandler);
+        document.getElementById('game-container').removeEventListener('touchend', this.touchEndHandler);
         
         window.removeEventListener('resize', this.resizeHandler);
     }
+
     
     
     handleKeyDown(e) {
@@ -513,27 +515,45 @@ updateCarModel(carType) {
         event.preventDefault();
         if (event.touches.length > 0) {
             this.lastTouchX = event.touches[0].clientX;
+            this.touchActive = true;
         }
     }
     
     handleTouchMove(event) {
+        if (!this.gameActive || !this.touchActive) return;
+
         event.preventDefault();
+
         if (event.touches.length > 0) {
             const touchX = event.touches[0].clientX;
             const diffX = touchX - this.lastTouchX;
             
-            if (diffX > 5) {
+            // Usar um threshold maior para movimentos no mobile
+            const threshold = 3;
+
+            if (diffX > threshold) {
                 this.inputDirection = 1;
-            } else if (diffX < -5) {
+            } else if (diffX < -threshold) {
                 this.inputDirection = -1;
             } else {
-                this.inputDirection = 0;
+                // Não resetar para 0 em movimentos pequenos para evitar game over acidental
+                // this.inputDirection = 0;
             }
             
             this.lastTouchX = touchX;
         }
     }
     
+
+    // Adicionar um novo método para encerrar o toque
+    handleTouchEnd(event) {
+        if (!this.gameActive) return;
+        
+        event.preventDefault();
+        this.touchActive = false;
+        this.inputDirection = 0; // Resetar direção quando soltar
+    }
+
     handleResize() {
         // Atualizar câmera e renderer quando a janela for redimensionada
         this.camera.aspect = window.innerWidth / window.innerHeight;

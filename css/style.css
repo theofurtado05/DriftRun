@@ -14,7 +14,12 @@ body {
     position: relative;
     width: 100vw;
     height: 100vh;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
+
 
 #stats {
     position: absolute;

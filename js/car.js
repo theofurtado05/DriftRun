@@ -305,33 +305,28 @@ class Car {
     
     isOffTrack(track) {
         let currentSegment;
-        // Obter o segmento atual onde o carro está
-        if(track){
+        // Add tolerance for mobile devices
+        const tolerance = 0.5; // Adjust as needed
+        
+        if(track) {
             currentSegment = track.getSegmentAt(this.position.z);
             
             if (!currentSegment) {
-                return true; // Se não encontrar um segmento, está fora da pista
+                return true; // If no segment is found, car is off track
             }
-
-            // Calcular a largura efetiva da pista neste segmento
+            
             const trackHalfWidth = CONFIG.track.width / 2;
-
-            // Se for uma curva, ajustar a posição central da pista
+            
             let trackCenterX = 0;
             if (currentSegment.isTurn) {
                 trackCenterX = CONFIG.track.width * 0.4 * currentSegment.turnDirection;
             }
-
-            // Verificar se o carro está fora da pista
+            
             const distanceFromCenter = Math.abs(this.position.x - trackCenterX);
-            return distanceFromCenter > trackHalfWidth - CONFIG.car.width / 2;
+            // Add tolerance to the calculation
+            return distanceFromCenter > (trackHalfWidth - CONFIG.car.width / 2 + tolerance);
         } else {
-            return false
+            return false;
         }
-        
-
-        // Verificar se o carro está fora da pista
-        // const trackHalfWidth = CONFIG.track.width / 2;
-        return Math.abs(this.position.x) > trackHalfWidth;
     }
 }
