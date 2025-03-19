@@ -302,6 +302,7 @@ function startGame() {
     // Criar e adicionar o contador de moedas total
     createCoinCounter();
     
+    
     // Mostrar mensagem de boas-vindas com o nome do jogador
     showWelcomeMessage();
     
@@ -458,6 +459,8 @@ function addCoins(amount) {
     updateCoinCounter();
 }
 
+
+
 // Criar o contador de moedas
 function createCoinCounter() {
     const coinCounter = document.createElement('div');
@@ -488,6 +491,109 @@ function createCoinCounter() {
     coinImg.onerror = function() {
         this.outerHTML = '<span style="font-size: 20px; color: gold;">🪙</span>';
     };
+
+   // Criar botão de pause separadamente
+   createPauseButton();
+}
+
+// Adicionar variável para controlar o estado de pausa
+let isPaused = false;
+
+// Função para pausar o jogo
+function pauseGame() {
+    if (!game || !game.gameActive) return;
+    
+    isPaused = true;
+    
+    // Salvar estado atual (velocidade do carro)
+    const currentSpeed = game.car.speed;
+    
+    // Reduzir velocidade a zero temporariamente
+    game.car.speed = 0;
+    
+    // Criar overlay de pausa
+    const pauseOverlay = document.createElement('div');
+    pauseOverlay.id = 'pause-overlay';
+    
+    // Estilizar o overlay
+    pauseOverlay.style.position = 'fixed';
+    pauseOverlay.style.top = '0';
+    pauseOverlay.style.left = '0';
+    pauseOverlay.style.width = '100%';
+    pauseOverlay.style.height = '100%';
+    pauseOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    pauseOverlay.style.display = 'flex';
+    pauseOverlay.style.justifyContent = 'center';
+    pauseOverlay.style.alignItems = 'center';
+    pauseOverlay.style.zIndex = '2000';
+    
+    // Criar botão de continuar
+    const continueButton = document.createElement('button');
+    continueButton.textContent = 'Continuar';
+    continueButton.style.padding = '15px 30px';
+    continueButton.style.fontSize = '18px';
+    continueButton.style.backgroundColor = '#4CAF50';
+    continueButton.style.color = 'white';
+    continueButton.style.border = 'none';
+    continueButton.style.borderRadius = '5px';
+    continueButton.style.cursor = 'pointer';
+    continueButton.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+    continueButton.style.transition = 'background-color 0.3s';
+    
+    // Efeito hover
+    continueButton.onmouseover = function() {
+        this.style.backgroundColor = '#45a049';
+    };
+    continueButton.onmouseout = function() {
+        this.style.backgroundColor = '#4CAF50';
+    };
+    
+    // Adicionar evento de clique para continuar o jogo
+    continueButton.addEventListener('click', () => {
+        // Remover o overlay
+        document.body.removeChild(pauseOverlay);
+        
+        // Restaurar velocidade do carro
+        game.car.speed = currentSpeed;
+        
+        // Atualizar estado de pausa
+        isPaused = false;
+    });
+    
+    // Adicionar botão ao overlay
+    pauseOverlay.appendChild(continueButton);
+    
+    // Adicionar overlay ao corpo do documento
+    document.body.appendChild(pauseOverlay);
+}
+
+// Modificar a função createPauseButton para usar pauseGame em vez de game.stop()
+function createPauseButton() {
+    const pauseButton = document.createElement('button');
+    pauseButton.id = 'pause-button';
+    pauseButton.textContent = 'Pause';
+    
+    // Estilizar o botão de pause
+    pauseButton.style.position = 'fixed';
+    pauseButton.style.top = '50px';
+    pauseButton.style.right = '10px'; // Posicionado à esquerda do contador de moedas
+    pauseButton.style.backgroundColor = '#f44336';
+    pauseButton.style.color = 'white';
+    pauseButton.style.border = 'none';
+    pauseButton.style.padding = '5px 10px';
+    pauseButton.style.borderRadius = '5px';
+    pauseButton.style.cursor = 'pointer';
+    pauseButton.style.zIndex = '1000';
+    
+    // Adicionar evento de clique para pausar o jogo
+    pauseButton.addEventListener('click', () => {
+        if (game && game.gameActive && !isPaused) {
+            pauseGame(); // Chama a nova função pauseGame
+        }
+    });
+    
+    // Adicionar o botão diretamente ao corpo do documento
+    document.body.appendChild(pauseButton);
 }
 
 // Atualizar o contador de moedas
