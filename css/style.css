@@ -44,7 +44,21 @@ body {
     text-align: center;
     z-index: 20;
     display: none;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
 }
+
+/* Aplicar flex-direction: column no mobile */
+@media (max-width: 768px) {
+    #game-over {
+        flex-direction: column;
+    }
+}
+
+
+
 
 #game-over h2 {
     font-size: 32px;
@@ -75,6 +89,7 @@ body {
 #game-over button:hover {
     background-color: #45a049;
 }
+
 
 .controls-info {
     position: absolute;
@@ -470,4 +485,22 @@ body {
     .close-button {
         display: block;
     }
+}
+
+/* Estilos para o aviso de AdBlock */
+#adblock-warning {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    z-index: 1000;
+    width: 80%;
+    max-width: 400px;
+    z-index: 9999999;
 }

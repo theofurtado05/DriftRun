@@ -607,6 +607,17 @@ updateCarModel(carType) {
     
     // Modificar a função showGameOver para atualizar estatísticas
     showGameOver() {
+        // Carregue os anúncios somente quando o game over for exibido
+        if (window.innerWidth <= 768) {
+            console.log("Mobile")
+            loadAdScript("left-ad", 468, 60, '828c85bd75e112081813997259dd503d');
+            loadAdScript("right-ad", 468, 60, '828c85bd75e112081813997259dd503d');
+        } else {
+            console.log("Desktop")
+            loadAdScript("left-ad", 160, 600, '3bded37f132453a50a83b5698af68bbe');
+            loadAdScript("right-ad", 160, 600, '3bded37f132453a50a83b5698af68bbe');
+        }
+
         // Adicionar botão de logout
         addLogoutButton();
         // Atualizar estatísticas finais
@@ -662,7 +673,7 @@ updateCarModel(carType) {
         saveUserData();
         
         // Mostrar modal de game over
-        document.getElementById('game-over').style.display = 'block';
+        document.getElementById('game-over').style.display = 'flex';
         
         // Verificar se o botão da loja já existe
         if (!document.getElementById('open-shop-btn')) {
@@ -690,6 +701,8 @@ updateCarModel(carType) {
 
         // Parar o carro
         this.car.speed = 0;
+
+        
     }
     
     update(deltaTime) {

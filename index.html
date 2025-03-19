@@ -25,22 +25,27 @@
     </div>
 
     <div id="game-container">
-        <div id="stats">
-            Tempo: <span id="time">0</span>s | 
-            Moedas: <span id="coins">0</span> | 
-            Curvas: <span id="turns">0</span> | 
-            Obstáculos: <span id="obstacles">0</span>
-        </div>
+            <div id="stats">
+                Tempo: <span id="time">0</span>s | 
+                Moedas: <span id="coins">0</span> | 
+                Curvas: <span id="turns">0</span> | 
+                Obstáculos: <span id="obstacles">0</span>
+            </div>
         
-        <div id="game-over">
-            <h2>GAME OVER</h2>
-            <p>⏳ Tempo total: <span id="total-time">0</span>s</p>
-            <p>🏆 Seu recorde: <span id="best-time">0</span>s</p>
-            <p>💰 Moedas coletadas: <span id="total-coins">0</span></p>
-            <p>➰ Curvas feitas: <span id="total-turns">0</span></p>
-            <p>🚧 Obstáculos desviados: <span id="total-obstacles">0</span></p>
-            <button id="restart-button">Recomeçar</button>
-            <button id="open-shop-btn" style="margin-top: 10px; background-color: #FFC107; color: black; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Loja de Carros</button>
+            <div id="game-over">
+                <div class="ad-container" id="left-ad"></div>
+                <div>
+                    <h2>GAME OVER</h2>
+                    <p>⏳ Tempo total: <span id="total-time">0</span>s</p>
+                    <p>🏆 Seu recorde: <span id="best-time">0</span>s</p>
+                    <p>💰 Moedas coletadas: <span id="total-coins">0</span></p>
+                    <p>➰ Curvas feitas: <span id="total-turns">0</span></p>
+                    <p>🚧 Obstáculos desviados: <span id="total-obstacles">0</span></p>
+                    <button id="restart-button">Recomeçar</button>
+                    <button id="open-shop-btn" style="margin-top: 10px; background-color: #FFC107; color: black; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Loja de Carros</button>
+                </div>
+                <div class="ad-container" id="right-ad"></div>
+            </div>
         </div>
 
         <!-- Adicionar após o div game-over -->
@@ -116,6 +121,32 @@
 
     </script>
 
+<script>
+    function loadAdScript(containerId, width, height, adId) {
+        var adContainer = document.getElementById(containerId);
+
+        var scriptConfig = document.createElement("script");
+        scriptConfig.type = "text/javascript";
+        scriptConfig.innerHTML = `
+            atOptions = {
+                'key': '${adId}',
+                'format': 'iframe',
+                'height': ${height},
+                'width': ${width},
+                'params': {}
+            };
+        `;
+
+        var scriptLoad = document.createElement("script");
+        scriptLoad.type = "text/javascript";
+        scriptLoad.src = `//www.highperformanceformat.com/${adId}/invoke.js`;
+        scriptLoad.async = true; // Permite carregar sem travar a página
+
+        adContainer.appendChild(scriptConfig);
+        adContainer.appendChild(scriptLoad);
+    }
+</script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <!-- Adicionar scripts do Firebase -->
@@ -134,5 +165,8 @@
     <script src="js/game.js"></script>
     <script src="js/main.js"></script>
     <script src="js/coin.js"></script>
+
+
+    
 </body>
 </html>
