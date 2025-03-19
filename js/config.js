@@ -4,7 +4,7 @@ const CONFIG = {
         width: 2,
         height: 1,
         length: 4,
-        speed: 12, // Velocidade base
+        speed: 20, // Velocidade base
         maxSpeed: 50,
         lateralSpeed: 3, // Aumentado para melhor resposta
         rotationSpeed: 0.02, // Aumentado para curvas mais responsivas
@@ -27,7 +27,7 @@ const CONFIG = {
     game: {
         coinInterval: 2, // segundos entre grupos de moedas
         coinValue: 1,    // valor de cada moeda
-        difficultyIncrease: 0.0001, // Aumento base de velocidade por frame
+        difficultyIncrease: 0.001, // Aumento base de velocidade por frame
         initialObstacleInterval: 2.5,  // segundos
         maxObstacleInterval: 0.8,    // segundos
         maxDifficultyLevel: 10

@@ -13,6 +13,13 @@ class Game {
         this.track = null;
         this.obstacleManager = null;
         this.mobileControls = null;
+
+        //aceleracao e frenagem
+        this.braking = false;
+        this.currentSpeed = CONFIG.car.speed;
+        this.targetSpeed = CONFIG.car.speed;
+        this.accelerationRate = 0.1;
+        this.brakingRate = 0.2;
         
         // Estado do jogo
         this.gameActive = false;
@@ -91,6 +98,42 @@ class Game {
         
         // Iniciar o jogo
         this.start();
+    }
+
+    updateSpeed() {
+        if (this.braking) {
+            // Frear gradualmente
+            this.currentSpeed = Math.max(
+                this.targetSpeed, 
+                this.currentSpeed - this.brakingRate
+            );
+            
+            // Ativar luzes de freio, se existirem
+            if (this.car && this.car.brakeLights) {
+                this.car.brakeLights.visible = true;
+            }
+            
+            // Opcional: Adicionar efeito de derrapagem
+            if (this.car && this.currentSpeed > this.targetSpeed * 1.5) {
+                // Criar efeito de derrapagem aqui
+            }
+        } else {
+            // Acelerar gradualmente
+            this.currentSpeed = Math.min(
+                this.targetSpeed, 
+                this.currentSpeed + this.accelerationRate
+            );
+            
+            // Desativar luzes de freio
+            if (this.car && this.car.brakeLights) {
+                this.car.brakeLights.visible = false;
+            }
+        }
+        
+        // Atualizar a velocidade do carro
+        if (this.car) {
+            this.car.speed = this.currentSpeed;
+        }
     }
 
     // Adicionar método para coletar moeda
@@ -232,6 +275,10 @@ updateCarModel(carType) {
             case 'ArrowRight':
                 this.inputDirection = 1;
                 break;
+            case 'ArrowDown':
+                this.braking = true;
+                this.targetSpeed = CONFIG.car.speed * 0.4; // Reduzir para 40% da velocidade durante a frenagem
+            break;
         }
     }
     
@@ -250,6 +297,10 @@ updateCarModel(carType) {
                 break;
             case 'ArrowRight':
                 if (this.inputDirection === 1) this.inputDirection = 0;
+                break;
+            case 'ArrowDown':
+                this.braking = false;
+                this.targetSpeed = CONFIG.car.speed; // Voltar à velocidade normal quando soltar a tecla
                 break;
         }
     }
@@ -457,7 +508,8 @@ updateCarModel(carType) {
         // Atualizar contador de obstáculos
         document.getElementById('obstacles').textContent = this.obstacleManager.getAvoidedCount();
         
-        
+        // Atualizar a velocidade baseada no estado de frenagem/aceleração
+        this.updateSpeed();
         
         // Aumentar dificuldade gradualmente com base na pontuação
         this.car.increaseDifficulty(this.obstacleManager.getAvoidedCount());
