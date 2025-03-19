@@ -20,7 +20,20 @@ class Game {
         this.targetSpeed = CONFIG.car.speed;
         this.accelerationRate = 0.1;
         this.brakingRate = 0.2;
+
+        // Propriedades para o efeito de derrapagem
+        this.skidMarks = [];
+        this.skidParticles = [];
+        this.skidTimer = 0;
+        this.skidInterval = 0.05; // Intervalo para criar novas marcas de derrapagem
+        this.maxSkidMarks = 50;
         
+        // Carregar som de derrapagem
+        this.skidSound = new Audio('assets/drift.mp3');
+        this.skidSound.loop = true;
+        this.skidSound.volume = 0;
+
+
         // Estado do jogo
         this.gameActive = false;
         this.elapsedTime = 0;
@@ -100,41 +113,232 @@ class Game {
         this.start();
     }
 
-    updateSpeed() {
-        if (this.braking) {
-            // Frear gradualmente
-            this.currentSpeed = Math.max(
-                this.targetSpeed, 
-                this.currentSpeed - this.brakingRate
-            );
-            
-            // Ativar luzes de freio, se existirem
-            if (this.car && this.car.brakeLights) {
-                this.car.brakeLights.visible = true;
-            }
-            
-            // Opcional: Adicionar efeito de derrapagem
-            if (this.car && this.currentSpeed > this.targetSpeed * 1.5) {
-                // Criar efeito de derrapagem aqui
-            }
-        } else {
-            // Acelerar gradualmente
-            this.currentSpeed = Math.min(
-                this.targetSpeed, 
-                this.currentSpeed + this.accelerationRate
-            );
-            
-            // Desativar luzes de freio
-            if (this.car && this.car.brakeLights) {
-                this.car.brakeLights.visible = false;
-            }
+    // Modifique o método updateSpeed para incluir o efeito de derrapagem
+updateSpeed() {
+    if (this.braking) {
+        // Frear gradualmente
+        this.currentSpeed = Math.max(
+            this.targetSpeed, 
+            this.currentSpeed - this.brakingRate
+        );
+        
+        // Ativar luzes de freio, se existirem
+        if (this.car && this.car.brakeLights) {
+            this.car.brakeLights.visible = true;
         }
         
-        // Atualizar a velocidade do carro
-        if (this.car) {
-            this.car.speed = this.currentSpeed;
+        // Adicionar efeito de derrapagem
+        if (this.car && this.currentSpeed > this.targetSpeed * 1.5) {
+            this.createSkidEffect(this.car.mesh.position, this.car.rotation);
+            
+            // Aumentar volume do som de derrapagem gradualmente
+            if (this.skidSound.volume < 0.8) {
+                this.skidSound.volume = Math.min(0.8, this.skidSound.volume + 0.05);
+            }
+            if (this.skidSound.paused) {
+                this.skidSound.play();
+            }
+        }
+    } else {
+        // Acelerar gradualmente
+        this.currentSpeed = Math.min(
+            this.targetSpeed, 
+            this.currentSpeed + this.accelerationRate
+        );
+        
+        // Desativar luzes de freio
+        if (this.car && this.car.brakeLights) {
+            this.car.brakeLights.visible = false;
+        }
+
+        // Diminuir volume do som de derrapagem gradualmente
+        if (this.skidSound.volume > 0) {
+            this.skidSound.volume = Math.max(0, this.skidSound.volume - 0.1);
+            if (this.skidSound.volume === 0) {
+                this.skidSound.pause();
+            }
         }
     }
+    
+    // Atualizar a velocidade do carro
+    if (this.car) {
+        this.car.speed = this.currentSpeed;
+    }
+}
+
+// Método para criar o efeito de derrapagem
+createSkidEffect(position, rotation) {
+    // Incrementar o timer de derrapagem
+    this.skidTimer += this.deltaTime;
+    
+    // Criar novas marcas de derrapagem em intervalos regulares
+    if (this.skidTimer >= this.skidInterval) {
+        this.skidTimer = 0;
+        
+        // Criar marcas de pneu na pista
+        this.createSkidMark(position, rotation);
+        
+        // Criar partículas de fumaça
+        this.createSkidParticles(position);
+    }
+    
+    // Atualizar e remover partículas antigas
+    this.updateSkidEffects();
+}
+
+// Método para criar marcas de pneu
+createSkidMark(position, rotation) {
+    // Calcular a posição das rodas traseiras
+    const wheelOffset = 1.5; // Distância das rodas traseiras em relação ao centro do carro
+    const wheelWidth = 0.8; // Largura entre as rodas
+    
+    // Criar uma geometria para a marca de derrapagem (um retângulo plano)
+    const geometry = new THREE.PlaneGeometry(0.3, 0.8);
+    
+    // Material para a marca de derrapagem (preto semi-transparente)
+    const material = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0.7,
+        depthWrite: false
+    });
+    
+    // Criar duas marcas de derrapagem (uma para cada roda traseira)
+    for (let i = -1; i <= 1; i += 2) {
+        const skidMark = new THREE.Mesh(geometry, material);
+        
+        // Posicionar a marca de derrapagem um pouco acima do solo para evitar z-fighting
+        skidMark.position.x = position.x + Math.sin(rotation.y) * wheelOffset + i * (wheelWidth / 2) * Math.cos(rotation.y);
+        skidMark.position.y = 0.01; // Ligeiramente acima do solo
+        skidMark.position.z = position.z + Math.cos(rotation.y) * wheelOffset - i * (wheelWidth / 2) * Math.sin(rotation.y);
+        
+        // Rotacionar a marca de derrapagem para alinhar com a direção do carro
+        skidMark.rotation.y = rotation.y;
+        skidMark.rotation.x = -Math.PI / 2; // Rotacionar para ficar plano no chão
+        
+        // Adicionar à cena
+        this.scene.add(skidMark);
+        
+        // Adicionar à lista de marcas de derrapagem
+        this.skidMarks.push({
+            mesh: skidMark,
+            life: 3.0 // Tempo de vida em segundos
+        });
+        
+        // Remover a marca de derrapagem mais antiga se exceder o limite
+        if (this.skidMarks.length > this.maxSkidMarks) {
+            const oldestMark = this.skidMarks.shift();
+            this.scene.remove(oldestMark.mesh);
+            oldestMark.mesh.geometry.dispose();
+            oldestMark.mesh.material.dispose();
+        }
+    }
+}
+
+// Método para criar partículas de fumaça
+createSkidParticles(position) {
+    // Número de partículas a criar
+    const particleCount = 5;
+    
+    // Criar partículas de fumaça para cada roda traseira
+    for (let i = -1; i <= 1; i += 2) {
+        for (let j = 0; j < particleCount; j++) {
+            // Criar uma geometria para a partícula (um pequeno plano)
+            const geometry = new THREE.PlaneGeometry(0.5, 0.5);
+            
+            // Material para a partícula (branco semi-transparente)
+            const material = new THREE.MeshBasicMaterial({
+                color: 0xDDDDDD,
+                transparent: true,
+                opacity: 0.3 + Math.random() * 0.3,
+                depthWrite: false
+            });
+            
+            const particle = new THREE.Mesh(geometry, material);
+            
+            // Posição inicial da partícula (próxima à roda traseira)
+            const wheelOffset = 1.5;
+            const wheelWidth = 0.8;
+            
+            particle.position.x = position.x + Math.sin(this.car.rotation.y) * wheelOffset + i * (wheelWidth / 2) * Math.cos(this.car.rotation.y);
+            particle.position.y = 0.2 + Math.random() * 0.3; // Altura aleatória
+            particle.position.z = position.z + Math.cos(this.car.rotation.y) * wheelOffset - i * (wheelWidth / 2) * Math.sin(this.car.rotation.y);
+            
+            // Velocidade aleatória para a partícula
+            const velocity = {
+                x: (Math.random() - 0.5) * 0.3,
+                y: 0.1 + Math.random() * 0.2,
+                z: (Math.random() - 0.5) * 0.3
+            };
+            
+            // Rotação aleatória
+            particle.rotation.z = Math.random() * Math.PI * 2;
+            
+            // Adicionar à cena
+            this.scene.add(particle);
+            
+            // Adicionar à lista de partículas
+            this.skidParticles.push({
+                mesh: particle,
+                velocity: velocity,
+                life: 1.0 + Math.random() * 0.5, // Tempo de vida aleatório
+                rotationSpeed: (Math.random() - 0.5) * 0.1 // Velocidade de rotação aleatória
+            });
+        }
+    }
+}
+
+// Método para atualizar os efeitos de derrapagem
+updateSkidEffects() {
+    // Atualizar marcas de derrapagem
+    for (let i = this.skidMarks.length - 1; i >= 0; i--) {
+        const mark = this.skidMarks[i];
+        mark.life -= this.deltaTime;
+        
+        // Diminuir a opacidade gradualmente
+        if (mark.life < 1.0) {
+            mark.mesh.material.opacity = mark.life * 0.7;
+        }
+        
+        // Remover marca expirada
+        if (mark.life <= 0) {
+            this.scene.remove(mark.mesh);
+            mark.mesh.geometry.dispose();
+            mark.mesh.material.dispose();
+            this.skidMarks.splice(i, 1);
+        }
+    }
+    
+    // Atualizar partículas de fumaça
+    for (let i = this.skidParticles.length - 1; i >= 0; i--) {
+        const particle = this.skidParticles[i];
+        particle.life -= this.deltaTime;
+        
+        // Mover a partícula
+        particle.mesh.position.x += particle.velocity.x * this.deltaTime;
+        particle.mesh.position.y += particle.velocity.y * this.deltaTime;
+        particle.mesh.position.z += particle.velocity.z * this.deltaTime;
+        
+        // Expandir a partícula gradualmente
+        const scale = 1.0 + (1.0 - particle.life) * 2.0;
+        particle.mesh.scale.set(scale, scale, scale);
+        
+        // Rotacionar a partícula
+        particle.mesh.rotation.z += particle.rotationSpeed;
+        
+        // Diminuir a opacidade gradualmente
+        particle.mesh.material.opacity = particle.life * 0.6;
+        
+        // Remover partícula expirada
+        if (particle.life <= 0) {
+            this.scene.remove(particle.mesh);
+            particle.mesh.geometry.dispose();
+            particle.mesh.material.dispose();
+            this.skidParticles.splice(i, 1);
+        }
+    }
+}
+
 
     // Adicionar método para coletar moeda
 collectCoin() {
@@ -470,6 +674,9 @@ updateCarModel(carType) {
     
     update(deltaTime) {
         if (!this.gameActive) return;
+
+        // Salvar o deltaTime para uso nos efeitos de derrapagem
+        this.deltaTime = deltaTime;
     
         // Atualizar elementos do jogo
         this.elapsedTime += deltaTime;
@@ -510,6 +717,9 @@ updateCarModel(carType) {
         
         // Atualizar a velocidade baseada no estado de frenagem/aceleração
         this.updateSpeed();
+        
+        // Atualizar efeitos de derrapagem mesmo quando não está freando
+        this.updateSkidEffects();
         
         // Aumentar dificuldade gradualmente com base na pontuação
         this.car.increaseDifficulty(this.obstacleManager.getAvoidedCount());
