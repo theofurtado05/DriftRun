@@ -304,29 +304,28 @@ class Car {
     }
     
     isOffTrack(track) {
-        let currentSegment;
-        // Add tolerance for mobile devices
-        const tolerance = 0.5; // Adjust as needed
+        // Verificar se track existe
+        if (!track) return false;
         
-        if(track) {
-            currentSegment = track.getSegmentAt(this.position.z);
-            
-            if (!currentSegment) {
-                return true; // If no segment is found, car is off track
-            }
-            
-            const trackHalfWidth = CONFIG.track.width / 2;
-            
-            let trackCenterX = 0;
-            if (currentSegment.isTurn) {
-                trackCenterX = CONFIG.track.width * 0.4 * currentSegment.turnDirection;
-            }
-            
-            const distanceFromCenter = Math.abs(this.position.x - trackCenterX);
-            // Add tolerance to the calculation
-            return distanceFromCenter > (trackHalfWidth - CONFIG.car.width / 2 + tolerance);
-        } else {
-            return false;
+        // Obter o segmento atual da pista
+        const currentSegment = track.getSegmentAt(this.position.z);
+        
+        // Se não há segmento, o carro está fora da pista
+        if (!currentSegment) return false; // Alterado para false para evitar game over falso
+        
+        // Adicionar tolerância para dispositivos móveis
+        const tolerance = 0.8; // Aumentado para maior tolerância
+        
+        const trackHalfWidth = CONFIG.track.width / 2;
+        
+        let trackCenterX = 0;
+        if (currentSegment.isTurn) {
+            trackCenterX = CONFIG.track.width * 0.4 * currentSegment.turnDirection;
         }
+        
+        const distanceFromCenter = Math.abs(this.position.x - trackCenterX);
+        
+        // Adicionar tolerância à verificação
+        return distanceFromCenter > (trackHalfWidth - CONFIG.car.width / 2 + tolerance);
     }
 }

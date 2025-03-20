@@ -161,9 +161,6 @@ function saveOwnedCars() {
     if (user) {
         // Salvar no Firestore (já incluído em saveUserData)
         saveUserData();
-    } else {
-        // Fallback para localStorage
-        localStorage.setItem('driftRaceOwnedCars', JSON.stringify(ownedCars));
     }
 }
 
@@ -188,9 +185,6 @@ function saveSelectedCar() {
     if (user) {
         // Salvar no Firestore
         saveUserData();
-    } else {
-        // Fallback para localStorage
-        localStorage.setItem('driftRaceSelectedCar', selectedCar);
     }
 }
 
@@ -378,34 +372,20 @@ function saveUserData() {
         .catch(error => console.error("Erro ao salvar dados:", error));
 }
 
-// Carregar moedas do localStorage ou Firestore
+// Carregar moedas exclusivamente do Firestore
 function loadCoins() {
-    const user = getCurrentUser();
-    
-    if (user) {
-        // Se o usuário estiver logado, os dados já foram carregados do Firestore
-        return;
-    }
-    
-    // Fallback para localStorage se não estiver logado
-    const savedCoins = localStorage.getItem('driftRaceCoins');
-    if (savedCoins !== null) {
-        totalCoins = parseInt(savedCoins);
-    } else {
-        totalCoins = 0;
-    }
+    // Não fazemos nada aqui, pois os dados já são carregados no initGame
+    // quando o usuário está autenticado
+    return;
 }
 
-// Salvar moedas no localStorage ou Firestore
+// Salvar moedas no Firestore
 function saveCoins() {
     const user = getCurrentUser();
     
     if (user) {
         // Salvar no Firestore
         saveUserData();
-    } else {
-        // Fallback para localStorage
-        localStorage.setItem('driftRaceCoins', totalCoins.toString());
     }
 }
 
@@ -435,21 +415,6 @@ function showWelcomeMessage() {
     setTimeout(() => {
         document.body.removeChild(welcomeMsg);
     }, 3000);
-}
-
-// Carregar moedas do localStorage
-function loadCoins() {
-    const savedCoins = localStorage.getItem('driftRaceCoins');
-    if (savedCoins !== null) {
-        totalCoins = parseInt(savedCoins);
-    } else {
-        totalCoins = 0;
-    }
-}
-
-// Salvar moedas no localStorage
-function saveCoins() {
-    localStorage.setItem('driftRaceCoins', totalCoins.toString());
 }
 
 // Adicionar moedas ao total

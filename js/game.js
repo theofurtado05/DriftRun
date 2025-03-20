@@ -614,6 +614,15 @@ updateCarModel(carType) {
             this.coinManager.reset();
         }
         
+        // Resetar estado do jogo
+        this.braking = false;
+        this.currentSpeed = CONFIG.car.speed;
+        this.targetSpeed = CONFIG.car.speed;
+        this.inputDirection = 0;
+        
+        // Limpar marcas de derrapagem
+        this.clearSkidEffects();
+        
         // Importante: reativar os event listeners que foram removidos no método stop
         this.setupEventListeners();
         
@@ -705,11 +714,18 @@ updateCarModel(carType) {
             }, 5000);
         }
         
-        // Adicionar moedas coletadas ao total
-        addCoins(gameCoins);
-        
-        // Salvar dados no Firestore
-        saveUserData();
+        // Adicionar moedas coletadas ao total - garantir que sejam salvas no Firestore
+        const user = getCurrentUser();
+        if (user) {
+            // Adicionar moedas e salvar diretamente no Firestore
+            totalCoins += gameCoins;
+            
+            // Salvar dados no Firestore
+            saveUserData();
+            
+            // Atualizar contador
+            updateCoinCounter();
+        }
         
         // Mostrar modal de game over
         document.getElementById('game-over').style.display = 'flex';
@@ -773,8 +789,9 @@ updateCarModel(carType) {
             document.getElementById('coins').textContent = this.coins;
         }
 
-        // Verificar se o carro saiu da pista
-        if (this.car.isOffTrack(this.track)) {
+        // Verificar se o carro está em uma posição válida antes de verificar se saiu da pista
+        if (this.car.position.z > 0 && this.track && this.car.isOffTrack(this.track)) {
+            console.log("Game over: carro saiu da pista", this.car.position);
             this.stop();
             return; // Importante: retornar imediatamente para não continuar a atualização
         }
@@ -802,14 +819,9 @@ updateCarModel(carType) {
             this.car.position.z + 10
         );
         
-        // Atualizar pista gerando novos segmentos conforme necessário
-        this.track.update(this.car.position);
-        
-        // Atualizar obstáculos
-        this.obstacleManager.update(deltaTime, this.car.position);
-        
         // Verificar colisões com obstáculos
         if (this.obstacleManager.checkCollisions(this.car.position)) {
+            console.log("Game over: colisão com obstáculo", this.car.position);
             this.stop();
             return; // Importante: retornar imediatamente para não continuar a atualização
         }
@@ -844,5 +856,37 @@ updateCarModel(carType) {
         document.getElementById('game-container').removeChild(this.renderer.domElement);
     }
 
-    
+    // Adicionar método para limpar todos os efeitos de derrapagem
+    clearSkidEffects() {
+        // Remover todas as marcas de derrapagem
+        for (let i = this.skidMarks.length - 1; i >= 0; i--) {
+            const mark = this.skidMarks[i];
+            this.scene.remove(mark.mesh);
+            mark.mesh.geometry.dispose();
+            mark.mesh.material.dispose();
+        }
+        this.skidMarks = [];
+        
+        // Remover todas as partículas
+        for (let i = this.skidParticles.length - 1; i >= 0; i--) {
+            const particle = this.skidParticles[i];
+            this.scene.remove(particle.mesh);
+            particle.mesh.geometry.dispose();
+            particle.mesh.material.dispose();
+        }
+        this.skidParticles = [];
+        
+        // Resetar timer
+        this.skidTimer = 0;
+    }
+
+    // Modificar o método reset do carro
+    reset() {
+        this.position = { x: 0, y: 1.2, z: 0 };
+        this.speed = CONFIG.car.speed;
+        this.driftForce = 0;
+        this.rotation = 0;
+        this.mesh.position.set(this.position.x, this.position.y, this.position.z);
+        this.mesh.rotation.y = this.rotation;
+    }
 }
