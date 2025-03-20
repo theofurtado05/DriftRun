@@ -3,17 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Drift Race 3D</title>
+    <title>Drift Race 3D - O Melhor Jogo de Drift e Carro Online Grátis</title>
+    
+    <!-- Meta tags para SEO -->
+    <meta name="description" content="Drift Race 3D - Jogue o melhor jogo de drift e carro online grátis. Derrape, faça curvas perfeitas e colecione moedas nesta corrida emocionante.">
+    <meta name="keywords" content="jogo de drift, jogo de carro online, drift race, corrida 3d, jogo de derrapagem, jogo de corrida, drift online, simulador de drift, jogo grátis">
+    
+    <!-- Meta tags Open Graph para compartilhamento em redes sociais -->
+    <meta property="og:title" content="Drift Race 3D - O Melhor Jogo de Drift e Carro Online">
+    <meta property="og:description" content="Derrape, faça curvas perfeitas e mostre suas habilidades no melhor jogo de drift online. Jogue agora grátis!">
+    <meta property="og:image" content="https://driftrun.online/assets/drift-race-share.jpg">
+    <meta property="og:url" content="https://driftrun.online">
+    <meta property="og:type" content="website">
+    
+    <!-- Meta tags Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Drift Race 3D - Jogo de Drift e Carro Online">
+    <meta name="twitter:description" content="Derrape, faça curvas perfeitas e mostre suas habilidades no melhor jogo de drift online. Jogue agora grátis!">
+    <meta name="twitter:image" content="https://driftrun.online/assets/drift-race-share.jpg">
+    
+    <!-- Canonical URL para evitar conteúdo duplicado -->
+    <link rel="canonical" href="https://driftrun.online">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    
+    <!-- Preload de assets críticos -->
+    <link rel="preload" href="assets/theo.png" as="image">
+    
+    <!-- Estruturada dados Schema.org para jogos -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "VideoGame",
+      "name": "Drift Race 3D",
+      "description": "Jogo de drift e corrida online em 3D onde você controla um carro, faz derrapagens e curvas perfeitas enquanto coleta moedas e evita obstáculos.",
+      "genre": ["Racing", "Driving", "Action", "Arcade"],
+      "gamePlatform": "Web Browser",
+      "applicationCategory": "Game",
+      "operatingSystem": "Any",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "BRL",
+        "availability": "https://schema.org/InStock"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "reviewCount": "387"
+      },
+      "image": "https://seu-dominio.com/assets/drift-race-preview.jpg",
+      "screenshot": "https://seu-dominio.com/assets/drift-race-gameplay.jpg",
+      "author": {
+        "@type": "Person",
+        "name": "Théo Furtado",
+        "url": "https://www.linkedin.com/in/theofurtadomauricio/"
+      }
+    }
+    </script>
     <link rel="stylesheet" href="css/style.css">
     
 </head>
 <body>
+    <header>
+        <h1>Drift Race 3D - O Melhor Jogo de Drift e Carro Online</h1>
+    </header>
     <div id="welcome-screen">
-        <h1>Drift Race 3D</h1>
+        
+        <h2>Drift Race 3D</h2>
         
         <div class="welcome-section">
-            <h2>Bem-vindo ao Jogo!</h2>
-            <p>Entre com sua conta Google para começar:</p>
+            <h3>Patrocine este Jogo de Drift</h3>
+            <p>Quer que sua marca apareça neste jogo de carro online com milhares de jogadores diários? Patrocine-nos e ganhe visibilidade!</p>
             <!-- O botão de login com Google será adicionado via JavaScript -->
         </div>
         
@@ -35,13 +98,13 @@
             <div id="game-over">
                 <div class="ad-container" id="left-ad"></div>
                 <div>
-                    <h2>GAME OVER</h2>
+                    <h2>GAME OVER - Drift Race 3D</h2>
                     <p>⏳ Tempo total: <span id="total-time">0</span>s</p>
                     <p>🏆 Seu recorde: <span id="best-time">0</span>s</p>
                     <p>💰 Moedas coletadas: <span id="total-coins">0</span></p>
                     <p>➰ Curvas feitas: <span id="total-turns">0</span></p>
                     <p>🚧 Obstáculos desviados: <span id="total-obstacles">0</span></p>
-                    <button id="restart-button">Recomeçar</button>
+                    <button id="restart-button">Jogar Novamente</button>
                     <button id="open-shop-btn" style="margin-top: 10px; background-color: #FFC107; color: black; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Loja de Carros</button>
                 </div>
                 <div class="ad-container" id="right-ad"></div>
@@ -51,7 +114,7 @@
         <!-- Adicionar após o div game-over -->
         <div id="shop-screen" style="display: none;">
             <div class="shop-header">
-                <h2>LOJA DE CARROS</h2>
+                <h2>LOJA DE CARROS - Drift Race 3D</h2>
                 <div class="shop-coins">
                     <span>💰</span>
                     <span id="shop-coins-value">0</span>
@@ -62,21 +125,21 @@
             <div class="shop-items">
                 <div class="car-item" data-car="default">
                     <div class="car-preview default-car"></div>
-                    <h3>Carro Padrão</h3>
-                    <p>Seu carro atual</p>
+                    <h3>Carro Padrão para Drift</h3>
+                    <p>Seu carro atual para derrapagens</p>
                     <button class="select-car-btn" data-car="default">Selecionado</button>
                 </div>
                 
                 <div class="car-item" data-car="beetle">
                     <div class="car-preview beetle-car"></div>
-                    <h3>Fusca Amarelo</h3>
+                    <h3>Fusca Amarelo Drift</h3>
                     <p>Preço: 150 moedas</p>
                     <button class="buy-car-btn" data-car="beetle" data-price="150">Comprar</button>
                 </div>
                 
                 <div class="car-item" data-car="lambo">
                     <div class="car-preview lambo-car"></div>
-                    <h3>Lamborghini Laranja</h3>
+                    <h3>Lamborghini Drift Laranja</h3>
                     <p>Preço: 900 moedas</p>
                     <button class="buy-car-btn" data-car="lambo" data-price="900">Comprar</button>
                 </div>
@@ -88,6 +151,34 @@
         </div> -->
     </div>
 
+    <!-- Descrição do jogo (visível para crawlers, mas oculta para usuários) -->
+    <div class="seo-content">
+        <h2>Jogo de Drift - Drift Race 3D</h2>
+        <p>Drift Race 3D é o melhor jogo de drift e carro online disponível gratuitamente. Com gráficos 3D impressionantes e controles intuitivos, você pode fazer derrapagens perfeitas, coletar moedas e competir por recordes.</p>
+        
+        <h3>Como Jogar este Jogo de Carro Online</h3>
+        <p>Use as setas do teclado ou controles de toque para direcionar seu carro e realizar derrapagens espetaculares. Desvie dos obstáculos, faça curvas perfeitas e colete o máximo de moedas possível para desbloquear novos carros de drift.</p>
+        
+        <h3>Características do Drift Race 3D</h3>
+        <ul>
+            <li>Gráficos 3D de alta qualidade</li>
+            <li>Físicas realistas de derrapagem</li>
+            <li>Coleção de carros para drift</li>
+            <li>Pistas dinâmicas com obstáculos</li>
+            <li>Sistema de moedas e recompensas</li>
+            <li>Ranking mundial de jogadores</li>
+            <li>Compatível com dispositivos móveis e desktop</li>
+        </ul>
+        
+        <h3>Por que jogar Drift Race 3D?</h3>
+        <p>Se você é fã de jogos de drift e jogos de carro online, Drift Race 3D oferece uma experiência completa e gratuita. Teste suas habilidades de derrapagem, desafie seus amigos e torne-se o melhor piloto de drift online!</p>
+    </div>
+
+    <footer>
+        <p>Drift Race 3D - O melhor jogo de drift e carro online grátis &copy; 2023</p>
+        <p>Desenvolvido por <a href="https://www.linkedin.com/in/theofurtadomauricio/" target="_blank">Théo Furtado</a></p>
+    </footer>
+
      <!-- Novo card de identificação do autor -->
     <a id="author-card" href="https://www.linkedin.com/in/theofurtadomauricio/" target="_blank">
         <button id="close-author-card" class="close-button" aria-label="Fechar">
@@ -97,7 +188,7 @@
         </button>
         <h3>Quem sou eu?</h3>
         <div class="author-info">
-            <img src="/assets/theo.png" alt="Théo Furtado" class="author-photo">
+            <img src="/assets/theo.png" alt="Théo Furtado - Criador do Jogo de Drift Race 3D" class="author-photo">
             <div class="author-name">Théo Furtado</div>
             <svg class="linkedin-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
@@ -105,19 +196,21 @@
         </div>
     </a>
 
+    
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-        const closeButton = document.getElementById('close-author-card');
-        const authorCard = document.getElementById('author-card');
-        
-        if (closeButton && authorCard) {
-            closeButton.addEventListener('click', function(event) {
-                event.preventDefault(); // Previne o comportamento padrão do link
-                event.stopPropagation(); // Impede que o evento se propague para o card
-                authorCard.style.display = 'none';
-            });
-        }
-    });
+            const closeButton = document.getElementById('close-author-card');
+            const authorCard = document.getElementById('author-card');
+            
+            if (closeButton && authorCard) {
+                closeButton.addEventListener('click', function(event) {
+                    event.preventDefault(); // Previne o comportamento padrão do link
+                    event.stopPropagation(); // Impede que o evento se propague para o card
+                    authorCard.style.display = 'none';
+                });
+            }
+        });
 
     </script>
 

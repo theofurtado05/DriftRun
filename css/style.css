@@ -496,3 +496,34 @@ body {
     z-index: 1000; /* Garantir que o botão esteja acima de outros elementos */
     touch-action: manipulation; /* Melhorar resposta de toque */
 }
+
+.seo-content {
+    max-width: 800px;
+    margin: 30px auto;
+    padding: 20px;
+    background-color: rgba(0,0,0,0.7);
+    border-radius: 10px;
+    color: #ffffff;
+}
+
+@media (max-width: 768px) {
+    .seo-content {
+        padding: 15px;
+    }
+}
+
+footer {
+    text-align: center;
+    padding: 15px;
+    background-color: rgba(0,0,0,0.7);
+    color: #ffffff;
+    margin-top: 20px;
+}
+
+header h1 {
+    position: absolute;
+    clip: rect(1px, 1px, 1px, 1px);
+    height: 1px;
+    width: 1px;
+    overflow: hidden;
+}
