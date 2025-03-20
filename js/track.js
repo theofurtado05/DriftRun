@@ -681,6 +681,40 @@ getElementFromPool(type) {
     rightSupport.position.set(billboardWidth/2 - 0.5, -billboardHeight/2 - 0.5, 0);
     billboard.add(rightSupport);
 
+    // Gerar um ID único para o container de anúncio
+    const adId = `billboard-ad-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    
+    // Criar um container DIV para o anúncio dentro da placa
+    const adContainer = document.createElement('div');
+    adContainer.id = adId;
+    adContainer.style.position = 'absolute';
+    adContainer.style.left = '-9999px'; // Posicionado fora da tela, mas ainda renderizado
+    adContainer.style.width = '160px';
+    adContainer.style.height = '300px';
+    document.body.appendChild(adContainer);
+    
+    // Determinar qual contêiner de anúncio usar (alternar entre IDs diferentes)
+    // Usamos uma lista de IDs de anúncios diferentes para cada outdoor
+    const adContainers = [
+        '77b1bce12bb32295e95d56f2b15cc16f', // ID 1
+        '6e6bb9df7507a0d6a72b690c1aa14d5d', // ID 2
+        '65448f5194b67ae3f2a2b3b7f8a8cfb3', // ID 3 
+        'fd3c7cbb71b5bfbc847fad17a4512362'  // ID 4
+    ];
+    
+    // Escolher um ID de anúncio aleatório para cada outdoor
+    const randomAdIndex = Math.floor(Math.random() * adContainers.length);
+    const containerId = adContainers[randomAdIndex];
+    
+    // Carregar o script de anúncio
+    loadAdScript(adId, 160, 300, containerId);
+    
+    // Adicionar referência ao anúncio para poder removê-lo depois
+    billboard.userData = {
+        adId: adId,
+        containerId: containerId
+    };
+
     // Adicionar a placa ao segmento
     segment.add(billboard);
 
@@ -688,6 +722,110 @@ getElementFromPool(type) {
     this.billboards.push(billboard);
 
     return billboard;
+}
+
+// Adicionar método para limpar anúncios quando o segmento for removido
+cleanupBillboardAds() {
+    for (const billboard of this.billboards) {
+        if (billboard.userData && billboard.userData.adId) {
+            // Remover o script de anúncio
+            removeAdScript(billboard.userData.adId);
+            
+            // Remover o container do DOM
+            const adContainer = document.getElementById(billboard.userData.adId);
+            if (adContainer) {
+                document.body.removeChild(adContainer);
+            }
+        }
+    }
+}
+
+// Modificar o método reset para limpar anúncios
+reset() {
+    // Limpar anúncios dos outdoors
+    this.cleanupBillboardAds();
+    
+    // Remover todos os segmentos
+    for (const segment of this.segments) {
+        this.scene.remove(segment.mesh);
+    }
+    
+    // Limpar arrays
+    this.segments = [];
+    
+    // Resetar variáveis
+    this.nextSegmentZ = 0;
+    this.lastTurnDirection = 0;
+    this.turnCount = 0;
+
+    // Limpar array de placas
+    this.billboards = [];
+    
+    // Recriar segmentos iniciais
+    this.initializeTrack();
+}
+
+// Modificar o método update para também remover anúncios de segmentos antigos
+update(carPosition) {
+    // Verificar se precisamos remover segmentos antigos
+    const segmentsToRemove = [];
+    
+    for (let i = 0; i < this.segments.length; i++) {
+        const segment = this.segments[i];
+        
+        // Se o segmento está muito atrás do carro, marcamos para remoção
+        if (segment.zPosition + CONFIG.track.segmentLength < carPosition.z - 30) {
+            segmentsToRemove.push(i);
+        }
+    }
+
+    // Atualizar o terreno para seguir o jogador
+    if (this.ground) {
+        this.ground.position.x = carPosition.x;
+        this.ground.position.z = carPosition.z;
+    }
+
+    this.updateMountains(carPosition);
+    
+    // Atualizar elementos de paisagem
+    this.updateLandscape(carPosition);
+    
+    // Remover segmentos antigos (do último para o primeiro para não afetar os índices)
+    for (let i = segmentsToRemove.length - 1; i >= 0; i--) {
+        const index = segmentsToRemove[i];
+        const segment = this.segments[index];
+        
+        // Remover anúncios dos outdoors neste segmento
+        segment.mesh.children.forEach(child => {
+            if (child.userData && child.userData.adId) {
+                // Remover o script de anúncio
+                removeAdScript(child.userData.adId);
+                
+                // Remover o container do DOM
+                const adContainer = document.getElementById(child.userData.adId);
+                if (adContainer) {
+                    document.body.removeChild(adContainer);
+                }
+                
+                // Remover do array de outdoors
+                const billboardIndex = this.billboards.indexOf(child);
+                if (billboardIndex !== -1) {
+                    this.billboards.splice(billboardIndex, 1);
+                }
+            }
+        });
+        
+        // Remover o mesh da cena
+        this.scene.remove(segment.mesh);
+        
+        // Remover da lista de segmentos
+        this.segments.splice(index, 1);
+    }
+    
+    // Adicionar novos segmentos se necessário
+    while (this.segments.length < CONFIG.track.maxVisibleSegments) {
+        this.createSegment();
+    }
 }
 
 // Método para atualizar a paisagem
@@ -879,27 +1017,6 @@ updateMountains(carPosition) {
             }
         }
         return null;
-    }
-    
-    reset() {
-        // Remover todos os segmentos
-        for (const segment of this.segments) {
-            this.scene.remove(segment.mesh);
-        }
-        
-        // Limpar arrays
-        this.segments = [];
-        
-        // Resetar variáveis
-        this.nextSegmentZ = 0;
-        this.lastTurnDirection = 0;
-        this.turnCount = 0;
-
-        // Limpar array de placas
-        this.billboards = [];
-        
-        // Recriar segmentos iniciais
-        this.initializeTrack();
     }
     
     getTurnCount() {
