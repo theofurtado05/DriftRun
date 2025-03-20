@@ -145,6 +145,17 @@
         adContainer.appendChild(scriptConfig);
         adContainer.appendChild(scriptLoad);
     }
+
+    function removeAdScript(containerId) {
+        var adContainer = document.getElementById(containerId);
+        if (!adContainer) return;
+
+        // Remover todos os scripts dentro do container
+        Array.from(adContainer.getElementsByTagName("script")).forEach(script => script.remove());
+
+        // Remover o conteúdo do container caso necessário
+        adContainer.innerHTML = "";
+    }
 </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>

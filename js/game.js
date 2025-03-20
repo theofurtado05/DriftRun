@@ -1,3 +1,8 @@
+//containers dos ads
+
+const CONTAINER_AD_MOBILE = '328517141b0f7db7d7e8894b04486ac2'
+const CONTAINER_AD_DESKTOP = '026bd1fdc36b2ed8498e1cd5fb314697'
+
 // Classe principal do jogo
 class Game {
     constructor(carType = 'default') {
@@ -588,6 +593,9 @@ updateCarModel(carType) {
 
         removeLogoutButton()
 
+        removeAdScript(CONTAINER_AD_DESKTOP)
+        removeAdScript(CONTAINER_AD_MOBILE)
+
         // Resetar elementos do jogo
         this.car.reset();
         this.track.reset();
@@ -621,14 +629,14 @@ updateCarModel(carType) {
         // Carregue os anúncios somente quando o game over for exibido
         if (window.innerWidth <= 768) {
             console.log("Mobile")
-            loadAdScript("left-ad", 320, 50, '328517141b0f7db7d7e8894b04486ac2');
-            loadAdScript("right-ad", 320, 50, '328517141b0f7db7d7e8894b04486ac2');
+            loadAdScript("left-ad", 320, 50, CONTAINER_AD_MOBILE);
+            loadAdScript("right-ad", 320, 50, CONTAINER_AD_MOBILE);
             
             // loadAdScript("right-ad", 468, 60, '828c85bd75e112081813997259dd503d');
         } else {
             console.log("Desktop")
-            loadAdScript("left-ad", 160, 300, '026bd1fdc36b2ed8498e1cd5fb314697');
-            loadAdScript("right-ad", 160, 300, '026bd1fdc36b2ed8498e1cd5fb314697');
+            loadAdScript("left-ad", 160, 300, CONTAINER_AD_DESKTOP);
+            loadAdScript("right-ad", 160, 300, CONTAINER_AD_DESKTOP);
             
             //loadAdScript("right-ad", 160, 600, '3bded37f132453a50a83b5698af68bbe');
         }
