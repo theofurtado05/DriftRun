@@ -280,6 +280,12 @@ function startGame() {
     // Carregar moedas do localStorage ou Firestore
     loadCoins();
     
+    // Adicionar estilos para o leaderboard
+    addLeaderboardStyles();
+    
+    // Reestruturar o game-over
+    restructureGameOver();
+    
     // Criar nova instância do jogo
     game = new Game(selectedCar);
     
@@ -296,11 +302,8 @@ function startGame() {
     // Criar e adicionar o contador de moedas total
     createCoinCounter();
     
-    
     // Mostrar mensagem de boas-vindas com o nome do jogador
     showWelcomeMessage();
-    
-    
     
     // Log para indicar que o jogo foi inicializado
     console.log('Drift Race 3D inicializado para ' + playerName);
@@ -580,3 +583,647 @@ function updateCoinCounter() {
 
 // Iniciar o jogo quando a página estiver carregada
 window.addEventListener('load', initGame);
+
+// Adicionar função para carregar e exibir o leaderboard
+function showLeaderboard(category = 'bestGameTime') {
+    console.log("Carregando leaderboard para categoria:", category);
+    
+    // Obter a seção do leaderboard
+    const leaderboardSection = document.getElementById('leaderboard-section');
+    
+    // Criar ou atualizar o container do leaderboard
+    let leaderboardContainer = document.getElementById('leaderboard-container');
+    
+    if (!leaderboardContainer) {
+        leaderboardContainer = document.createElement('div');
+        leaderboardContainer.id = 'leaderboard-container';
+        
+        // Adicionar à seção do leaderboard
+        leaderboardSection.appendChild(leaderboardContainer);
+    }
+    
+    // Definir título e unidade para cada categoria
+    const categoryConfig = {
+        'bestGameTime': { title: 'Tempo Recorde', unit: 's', icon: '⏱️' },
+        'totalCoins': { title: 'Total de Moedas', unit: '', icon: '💰' },
+        'totalTimePlayed': { title: 'Tempo Total Jogado', unit: 's', icon: '⌛' },
+        'totalObstaclesPassed': { title: 'Obstáculos Ultrapassados', unit: '', icon: '🚧' },
+        'totalTurnsMade': { title: 'Curvas Feitas', unit: '', icon: '↩️' },
+        'gamesPlayed': { title: 'Partidas Jogadas', unit: '', icon: '🎮' }
+    };
+    
+    // Criar HTML para o leaderboard com barra de pesquisa ajustada
+    let leaderboardHTML = `
+        <div class="leaderboard-header">
+            <h3>${categoryConfig[category].icon} ${categoryConfig[category].title}</h3>
+            
+            <div class="leaderboard-tabs">
+                ${Object.keys(categoryConfig).map(cat => 
+                    `<button class="leaderboard-tab ${cat === category ? 'active' : ''}" 
+                     data-category="${cat}" title="${categoryConfig[cat].title}">${categoryConfig[cat].icon}</button>`
+                ).join('')}
+            </div>
+            
+            <div class="leaderboard-search">
+                <input type="text" id="leaderboard-search-input" placeholder="Buscar jogador...">
+                <button id="leaderboard-search-btn" type="button" aria-label="Buscar">🔍</button>
+            </div>
+        </div>
+        
+        <div class="leaderboard-content">
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Pos</th>
+                        <th>Jogador</th>
+                        <th>${categoryConfig[category].title}</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    <tr><td colspan="3">Carregando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    leaderboardContainer.innerHTML = leaderboardHTML;
+    
+    // Adicionar event listeners para os botões de categoria
+    document.querySelectorAll('.leaderboard-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            const newCategory = e.target.dataset.category;
+            showLeaderboard(newCategory);
+        });
+    });
+    
+    // Adicionar event listener para o botão de busca
+    document.getElementById('leaderboard-search-btn').addEventListener('click', () => {
+        const searchTerm = document.getElementById('leaderboard-search-input').value.trim();
+        if (searchTerm) {
+            searchLeaderboard(searchTerm, category);
+        }
+    });
+    
+    // Adicionar event listener para busca ao pressionar Enter
+    document.getElementById('leaderboard-search-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const searchTerm = e.target.value.trim();
+            if (searchTerm) {
+                searchLeaderboard(searchTerm, category);
+            }
+        }
+    });
+    
+    // Carregar dados do leaderboard
+    loadLeaderboardData(category);
+}
+
+// Função para carregar dados do leaderboard do Firestore
+function loadLeaderboardData(category, searchTerm = null) {
+    const leaderboardBody = document.getElementById('leaderboard-body');
+    const currentUser = getCurrentUser();
+    const currentUserId = currentUser ? currentUser.uid : null;
+    
+    // Referência para a coleção de usuários
+    const usersRef = db.collection('users');
+    
+    // Criar a consulta base
+    let query = usersRef.orderBy(category, 'desc').limit(10);
+    
+    // Se houver um termo de busca, modificar a consulta
+    if (searchTerm) {
+        // Firebase não suporta LIKE, então precisamos buscar todos e filtrar
+        query = usersRef.orderBy('username');
+    }
+    
+    // Executa a consulta
+    query.get().then((snapshot) => {
+        // Array para armazenar todos os resultados
+        let allResults = [];
+        
+        // Extrair os resultados e adicionar à array
+        snapshot.forEach((doc) => {
+            const userData = doc.data();
+            allResults.push({
+                id: doc.id,
+                ...userData
+            });
+        });
+        
+        // Se houver um termo de busca, filtrar os resultados
+        if (searchTerm) {
+            const lowerSearchTerm = searchTerm.toLowerCase();
+            allResults = allResults.filter(user => 
+                user.username && user.username.toLowerCase().includes(lowerSearchTerm)
+            );
+            
+            // Ordenar novamente por categoria
+            allResults.sort((a, b) => (b[category] || 0) - (a[category] || 0));
+        }
+        
+        // Verificar se o usuário atual está nos resultados
+        let currentUserData = null;
+        let currentUserIndex = -1;
+        
+        if (currentUserId) {
+            currentUserIndex = allResults.findIndex(user => user.id === currentUserId);
+            if (currentUserIndex !== -1) {
+                currentUserData = allResults[currentUserIndex];
+            }
+        }
+        
+        // Preparar dados para exibição
+        let topPlayers = allResults.slice(0, 10);
+        
+        // Construir o HTML da tabela
+        let tableHTML = '';
+        
+        if (topPlayers.length === 0) {
+            tableHTML = `<tr><td colspan="3">Nenhum resultado encontrado</td></tr>`;
+        } else {
+            // Mostrar os top 10 players
+            topPlayers.forEach((user, index) => {
+                const isCurrentUser = user.id === currentUserId;
+                tableHTML += `
+                    <tr class="${isCurrentUser ? 'current-user' : ''}">
+                        <td>${index + 1}</td>
+                        <td>${user.username || 'Anônimo'}</td>
+                        <td>${user[category] || 0}</td>
+                    </tr>
+                `;
+            });
+            
+            // Se o usuário atual não está nos top 10, mas existe
+            if (currentUserData && currentUserIndex >= 10) {
+                tableHTML += `
+                    <tr class="not-in-top current-user">
+                        <td>${currentUserIndex + 1}</td>
+                        <td>${currentUserData.username || 'Anônimo'}</td>
+                        <td>${currentUserData[category] || 0}</td>
+                    </tr>
+                `;
+            }
+        }
+        
+        // Atualizar a tabela
+        leaderboardBody.innerHTML = tableHTML;
+    }).catch((error) => {
+        console.error("Erro ao carregar leaderboard:", error);
+        leaderboardBody.innerHTML = `<tr><td colspan="3">Erro ao carregar dados</td></tr>`;
+    });
+}
+
+// Função para buscar um jogador no leaderboard
+function searchLeaderboard(searchTerm, category) {
+    // Mostrar uma mensagem de carregamento
+    const leaderboardBody = document.getElementById('leaderboard-body');
+    leaderboardBody.innerHTML = `<tr><td colspan="3">Buscando "${searchTerm}"...</td></tr>`;
+    
+    // Carregar dados com o termo de busca
+    loadLeaderboardData(category, searchTerm);
+}
+
+// Modificar a função showGameOver para exibir o leaderboard
+function showGameOver() {
+    // Primeiro, remover quaisquer anúncios existentes
+    removeAdScript("left-ad");
+    removeAdScript("right-ad");
+    
+    // Limpar os contêineres de anúncios
+    document.getElementById("left-ad").innerHTML = "";
+    document.getElementById("right-ad").innerHTML = "";
+    
+    // Depois, carregar os novos anúncios com base no tamanho da tela
+    if (window.innerWidth <= 768) {
+        console.log("Mobile");
+        loadAdScript("left-ad", 320, 50, CONTAINER_AD_MOBILE);
+        loadAdScript("right-ad", 320, 50, CONTAINER_AD_MOBILE);
+    } else {
+        console.log("Desktop");
+        loadAdScript("left-ad", 160, 300, CONTAINER_AD_DESKTOP);
+        loadAdScript("right-ad", 160, 300, CONTAINER_AD_DESKTOP);
+    }
+
+    // Adicionar botão de logout
+    addLogoutButton();
+    
+    // Atualizar estatísticas finais
+    const gameTime = Math.floor(this.elapsedTime);
+    const gameCoins = this.coins;
+    const gameTurns = this.track.getTurnCount();
+    const gameObstacles = this.obstacleManager.getAvoidedCount();
+    
+    document.getElementById('total-time').textContent = gameTime;
+    document.getElementById('total-coins').textContent = gameCoins;
+    document.getElementById('total-turns').textContent = gameTurns;
+    document.getElementById('total-obstacles').textContent = gameObstacles;
+    
+    // Atualizar o recorde na tela
+    const bestTimeElement = document.getElementById('best-time');
+    if (bestTimeElement) {
+        bestTimeElement.textContent = bestGameTime;
+    }
+    
+    // Atualizar estatísticas globais
+    totalTimePlayed += gameTime;
+    totalObstaclesPassed += gameObstacles;
+    totalTurnsMade += gameTurns;
+    gamesPlayed += 1;
+    
+    // Verificar se é um novo recorde de tempo
+    if (gameTime > bestGameTime) {
+        bestGameTime = gameTime;
+        
+        // Mostrar mensagem de novo recorde
+        const recordMessage = document.createElement('p');
+        recordMessage.textContent = '🏆 NOVO RECORDE DE TEMPO! 🏆';
+        recordMessage.style.color = 'gold';
+        recordMessage.style.fontWeight = 'bold';
+        recordMessage.style.fontSize = '1.2em';
+        recordMessage.style.marginTop = '10px';
+        
+        // Inserir a mensagem no início do game-over
+        const gameOverDiv = document.getElementById('game-over');
+        gameOverDiv.insertBefore(recordMessage, gameOverDiv.firstChild.nextSibling);
+        
+        // Remover a mensagem após alguns segundos
+        setTimeout(() => {
+            if (recordMessage.parentNode) {
+                recordMessage.parentNode.removeChild(recordMessage);
+            }
+        }, 5000);
+    }
+    
+    // Adicionar moedas coletadas ao total - garantir que sejam salvas no Firestore
+    const user = getCurrentUser();
+    if (user) {
+        // Adicionar moedas e salvar diretamente no Firestore
+        totalCoins += gameCoins;
+        
+        // Salvar dados no Firestore
+        saveUserData();
+        
+        // Atualizar contador
+        updateCoinCounter();
+    }
+    
+    // Mostrar modal de game over
+    document.getElementById('game-over').style.display = 'flex';
+    
+    // Verificar se o botão da loja já existe
+    if (!document.getElementById('open-shop-btn')) {
+        // Adicionar botão para abrir a loja
+        const shopButton = document.createElement('button');
+        shopButton.id = 'open-shop-btn';
+        shopButton.textContent = 'Loja de Carros';
+        shopButton.style.marginTop = '10px';
+        shopButton.style.backgroundColor = '#FFC107';
+        shopButton.style.color = 'black';
+        shopButton.style.border = 'none';
+        shopButton.style.padding = '10px 20px';
+        shopButton.style.borderRadius = '5px';
+        shopButton.style.cursor = 'pointer';
+        
+        // Adicionar evento de clique para abrir a loja
+        shopButton.addEventListener('click', () => {
+            document.getElementById('game-over').style.display = 'none';
+            openShop();
+        });
+        
+        // Adicionar botão ao modal de game over
+        document.getElementById('game-over').appendChild(shopButton);
+    }
+    
+    // Adicionar o leaderboard com a categoria padrão (tempo recorde)
+    showLeaderboard('bestGameTime');
+
+    // Parar o carro
+    this.car.speed = 0;
+}
+
+// Adicionar estilos para o layout de game-over com leaderboard
+function addLeaderboardStyles() {
+    updateLeaderboardStyles();
+}
+
+// Modificar a estrutura do game-over quando o jogo iniciar
+function restructureGameOver() {
+    const gameOverDiv = document.getElementById('game-over');
+    if (!gameOverDiv) return;
+    
+    // Salvar os anúncios antes de modificar
+    const leftAd = document.getElementById('left-ad');
+    const rightAd = document.getElementById('right-ad');
+    
+    // Nova estrutura com botão para leaderboard
+    gameOverDiv.innerHTML = `
+        <h2>GAME OVER</h2>
+        <div class="game-over-layout">
+            <div class="ad-container" id="left-ad-container"></div>
+            <div class="game-over-content">
+                <div class="game-over-stats">
+                    <p>⏳ Tempo total: <span id="total-time">0</span>s</p>
+                    <p>🏆 Seu recorde: <span id="best-time">0</span>s</p>
+                    <p>💰 Moedas coletadas: <span id="total-coins">0</span></p>
+                    <p>➰ Curvas feitas: <span id="total-turns">0</span></p>
+                    <p>🚧 Obstáculos desviados: <span id="total-obstacles">0</span></p>
+                </div>
+                <div class="game-over-actions">
+                    <button id="restart-button">Recomeçar</button>
+                    <button id="open-shop-btn">Loja de Carros</button>
+                    <button id="show-leaderboard-btn">Ranking Mundial 🏆</button>
+                </div>
+                <div id="leaderboard-section" style="display: none;">
+                    <!-- O leaderboard será adicionado aqui -->
+                </div>
+            </div>
+            <div class="ad-container" id="right-ad-container"></div>
+        </div>
+    `;
+    
+    // Mover os anúncios para os novos containers
+    if (leftAd) document.getElementById('left-ad-container').appendChild(leftAd);
+    if (rightAd) document.getElementById('right-ad-container').appendChild(rightAd);
+    
+    // Reconectar evento ao botão de restart
+    document.getElementById('restart-button').addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        game.restart();
+    });
+    
+    // Reconectar evento ao botão da loja
+    document.getElementById('open-shop-btn').addEventListener('click', () => {
+        document.getElementById('game-over').style.display = 'none';
+        openShop();
+    });
+    
+    // Adicionar evento ao botão de leaderboard
+    document.getElementById('show-leaderboard-btn').addEventListener('click', toggleLeaderboard);
+    
+    // Estilizar o botão de leaderboard
+    const leaderboardBtn = document.getElementById('show-leaderboard-btn');
+    leaderboardBtn.style.backgroundColor = '#8E44AD'; // Cor roxa
+    leaderboardBtn.style.color = 'white';
+    leaderboardBtn.style.border = 'none';
+    leaderboardBtn.style.padding = '10px 20px';
+    leaderboardBtn.style.borderRadius = '5px';
+    leaderboardBtn.style.cursor = 'pointer';
+    leaderboardBtn.style.marginTop = '10px';
+}
+
+// Função para alternar a visibilidade do leaderboard
+function toggleLeaderboard() {
+    const leaderboardSection = document.getElementById('leaderboard-section');
+    const leaderboardBtn = document.getElementById('show-leaderboard-btn');
+    
+    if (leaderboardSection.style.display === 'none') {
+        // Mostrar o leaderboard
+        leaderboardSection.style.display = 'block';
+        leaderboardBtn.textContent = 'Esconder Ranking ▲';
+        
+        // Verificar se o leaderboard já foi carregado
+        if (!document.getElementById('leaderboard-container')) {
+            // Carregar o leaderboard apenas na primeira vez
+            showLeaderboard('bestGameTime');
+        }
+    } else {
+        // Esconder o leaderboard
+        leaderboardSection.style.display = 'none';
+        leaderboardBtn.textContent = 'Ranking Mundial 🏆';
+    }
+}
+
+// Atualizar os estilos do leaderboard com a barra de pesquisa corrigida
+function updateLeaderboardStyles() {
+    // Verificar se já existe um estilo personalizado para o leaderboard
+    const existingStyle = document.getElementById('leaderboard-styles');
+    if (existingStyle) {
+        existingStyle.remove();
+    }
+    
+    // Criar novo elemento de estilo
+    const styleElement = document.createElement('style');
+    styleElement.id = 'leaderboard-styles';
+    styleElement.textContent = `
+        #game-over {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .game-over-stats {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .game-over-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        #leaderboard-container {
+            max-height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        #leaderboard-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #leaderboard-container::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+        
+        #leaderboard-container::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+        
+        .leaderboard-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .leaderboard-header h3 {
+            color: white;
+            margin: 0 0 15px 0;
+            font-size: 1.3em;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+        
+        .leaderboard-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .leaderboard-tab {
+            background-color: #444;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .leaderboard-tab:hover {
+            background-color: #666;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .leaderboard-tab.active {
+            background-color: #8E44AD;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .leaderboard-content {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .leaderboard-table {
+            width: 95%;
+            border-collapse: collapse;
+            color: white;
+            margin: 0 auto;
+        }
+        
+        .leaderboard-table th,
+        .leaderboard-table td {
+            padding: 10px 12px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .leaderboard-table th {
+            background-color: rgba(0, 0, 0, 0.3);
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+        
+        .leaderboard-table tr.current-user {
+            background-color: rgba(142, 68, 173, 0.3);
+            font-weight: bold;
+        }
+        
+        .not-in-top {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 2px dashed rgba(255, 255, 255, 0.3);
+        }
+        
+        .leaderboard-search {
+            display: flex;
+            width: 100%;
+            max-width: 300px;
+            margin: 8px auto 15px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+            border-radius: 0;
+            overflow: visible;
+            transition: all 0.3s ease;
+            background: transparent;
+            border: none;
+            height: 36px;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+        
+        .leaderboard-search:hover, 
+        .leaderboard-search:focus-within {
+            box-shadow: none;
+            transform: none;
+        }
+        
+        #leaderboard-search-input {
+            flex: 1;
+            padding: 0 15px;
+            height: 100%;
+            background: rgba(40, 40, 40, 0.8);
+            color: white;
+            border: 1px solid rgba(120, 120, 120, 0.5);
+            border-right: none;
+            border-radius: 18px 0 0 18px;
+            font-size: 14px;
+            font-family: 'Arial', sans-serif;
+            letter-spacing: 0.5px;
+            font-weight: 400;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        #leaderboard-search-input:focus {
+            background: rgba(50, 50, 50, 0.9);
+            border-color: rgba(150, 150, 150, 0.7);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        
+        #leaderboard-search-input::placeholder {
+            color: rgba(200, 200, 200, 0.7);
+            transition: all 0.2s ease;
+        }
+        
+        #leaderboard-search-input:focus::placeholder {
+            color: rgba(160, 160, 160, 0.5);
+            transform: translateX(5px);
+        }
+        
+        #leaderboard-search-btn {
+            background: linear-gradient(135deg, #8E44AD, #9B59B6);
+            color: white;
+            border: none;
+            height: 100%;
+            width: 42px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border-radius: 0 18px 18px 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        
+        #leaderboard-search-btn:hover {
+            background: linear-gradient(135deg, #9B59B6, #8E44AD);
+            transform: translateX(2px);
+        }
+        
+        /* Estilos responsivos para dispositivos móveis */
+        @media (max-width: 768px) {
+            .leaderboard-search {
+                max-width: 85%;
+                height: 34px;
+            }
+        }
+    `;
+    
+    document.head.appendChild(styleElement);
+}
