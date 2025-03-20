@@ -621,12 +621,16 @@ updateCarModel(carType) {
         // Carregue os anúncios somente quando o game over for exibido
         if (window.innerWidth <= 768) {
             console.log("Mobile")
-            loadAdScript("left-ad", 468, 60, '828c85bd75e112081813997259dd503d');
-            loadAdScript("right-ad", 468, 60, '828c85bd75e112081813997259dd503d');
+            loadAdScript("left-ad", 320, 50, '328517141b0f7db7d7e8894b04486ac2');
+            loadAdScript("right-ad", 320, 50, '328517141b0f7db7d7e8894b04486ac2');
+            
+            // loadAdScript("right-ad", 468, 60, '828c85bd75e112081813997259dd503d');
         } else {
             console.log("Desktop")
-            loadAdScript("left-ad", 160, 600, '3bded37f132453a50a83b5698af68bbe');
-            loadAdScript("right-ad", 160, 600, '3bded37f132453a50a83b5698af68bbe');
+            loadAdScript("left-ad", 160, 300, '026bd1fdc36b2ed8498e1cd5fb314697');
+            loadAdScript("right-ad", 160, 300, '026bd1fdc36b2ed8498e1cd5fb314697');
+            
+            //loadAdScript("right-ad", 160, 600, '3bded37f132453a50a83b5698af68bbe');
         }
 
         // Adicionar botão de logout
