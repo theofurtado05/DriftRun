@@ -470,11 +470,15 @@ function pauseGame() {
     
     isPaused = true;
     
-    // Salvar estado atual (velocidade do carro)
-    const currentSpeed = game.car.speed;
+    // Armazenar o estado atual do jogo para restaurar depois
+    const savedGameState = {
+        speed: game.car.speed,
+        targetSpeed: game.targetSpeed,
+        gameActive: game.gameActive
+    };
     
-    // Reduzir velocidade a zero temporariamente
-    game.car.speed = 0;
+    // Pausar o jogo interrompendo o loop de animação
+    game.gameActive = false;
     
     // Criar overlay de pausa
     const pauseOverlay = document.createElement('div');
@@ -518,8 +522,13 @@ function pauseGame() {
         // Remover o overlay
         document.body.removeChild(pauseOverlay);
         
-        // Restaurar velocidade do carro
-        game.car.speed = currentSpeed;
+        // Restaurar estado do jogo
+        game.car.speed = savedGameState.speed;
+        game.targetSpeed = savedGameState.targetSpeed;
+        game.gameActive = true;
+        
+        // Reiniciar o loop de animação
+        game.animate();
         
         // Atualizar estado de pausa
         isPaused = false;
