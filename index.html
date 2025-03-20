@@ -153,8 +153,15 @@
         // Remover todos os scripts dentro do container
         Array.from(adContainer.getElementsByTagName("script")).forEach(script => script.remove());
 
-        // Remover o conteúdo do container caso necessário
+        // Limpar completamente o conteúdo do container
         adContainer.innerHTML = "";
+        
+        // Remover também os iframes que possam ter sido criados
+        Array.from(adContainer.getElementsByTagName("iframe")).forEach(iframe => iframe.remove());
+        
+        // Remover atributos que possam ter sido adicionados pelo Adsterra
+        adContainer.removeAttribute("data-ad-status");
+        adContainer.removeAttribute("data-ad-id");
     }
 </script>
 

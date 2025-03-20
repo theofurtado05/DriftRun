@@ -583,6 +583,13 @@ updateCarModel(carType) {
     
     stop() {
         this.gameActive = false;
+        
+        // Parar o som de derrapagem se estiver tocando
+        if (this.skidSound && !this.skidSound.paused) {
+            this.skidSound.pause();
+            this.skidSound.currentTime = 0;
+        }
+        
         this.removeEventListeners(); // Remover os event listeners antes de mostrar o game over
         this.showGameOver();
     }
@@ -591,10 +598,9 @@ updateCarModel(carType) {
         // Esconder game over
         document.getElementById('game-over').style.display = 'none';
 
-        removeLogoutButton()
-
-        removeAdScript(CONTAINER_AD_DESKTOP)
-        removeAdScript(CONTAINER_AD_MOBILE)
+        removeLogoutButton();
+        removeAdScript(CONTAINER_AD_DESKTOP);
+        removeAdScript(CONTAINER_AD_MOBILE);
 
         // Resetar elementos do jogo
         this.car.reset();
@@ -608,8 +614,12 @@ updateCarModel(carType) {
             this.coinManager.reset();
         }
         
+        // Importante: reativar os event listeners que foram removidos no método stop
+        this.setupEventListeners();
+        
         // Reiniciar o jogo
-        this.start();
+        this.gameActive = true;
+        this.animate();
     }
     
     resetStats() {
@@ -624,25 +634,30 @@ updateCarModel(carType) {
         document.getElementById('obstacles').textContent = '0';
     }
     
-    // Modificar a função showGameOver para atualizar estatísticas
+    // Modificar a função showGameOver para gerenciar corretamente os anúncios
     showGameOver() {
-        // Carregue os anúncios somente quando o game over for exibido
+        // Primeiro, remover quaisquer anúncios existentes
+        removeAdScript("left-ad");
+        removeAdScript("right-ad");
+        
+        // Limpar os contêineres de anúncios
+        document.getElementById("left-ad").innerHTML = "";
+        document.getElementById("right-ad").innerHTML = "";
+        
+        // Depois, carregar os novos anúncios com base no tamanho da tela
         if (window.innerWidth <= 768) {
-            console.log("Mobile")
+            console.log("Mobile");
             loadAdScript("left-ad", 320, 50, CONTAINER_AD_MOBILE);
             loadAdScript("right-ad", 320, 50, CONTAINER_AD_MOBILE);
-            
-            // loadAdScript("right-ad", 468, 60, '828c85bd75e112081813997259dd503d');
         } else {
-            console.log("Desktop")
+            console.log("Desktop");
             loadAdScript("left-ad", 160, 300, CONTAINER_AD_DESKTOP);
             loadAdScript("right-ad", 160, 300, CONTAINER_AD_DESKTOP);
-            
-            //loadAdScript("right-ad", 160, 600, '3bded37f132453a50a83b5698af68bbe');
         }
 
         // Adicionar botão de logout
         addLogoutButton();
+        
         // Atualizar estatísticas finais
         const gameTime = Math.floor(this.elapsedTime);
         const gameCoins = this.coins;
@@ -659,6 +674,7 @@ updateCarModel(carType) {
         if (bestTimeElement) {
             bestTimeElement.textContent = bestGameTime;
         }
+        
         // Atualizar estatísticas globais
         totalTimePlayed += gameTime;
         totalObstaclesPassed += gameObstacles;
@@ -724,8 +740,6 @@ updateCarModel(carType) {
 
         // Parar o carro
         this.car.speed = 0;
-
-        
     }
     
     update(deltaTime) {
