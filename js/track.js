@@ -618,12 +618,12 @@ getElementFromPool(type) {
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Adicionar texto
+        // Adicionar texto de script no lugar de "PATROCINE AQUI"
         ctx.fillStyle = 'black';
-        ctx.font = 'bold 48px Arial';
+        ctx.font = 'bold 24px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('PATROCINE AQUI', canvas.width/2, canvas.height/2);
+        ctx.fillText('Script de anúncio será carregado aqui', canvas.width/2, canvas.height/2);
         
         // Criar textura a partir do canvas
         const tempTexture = new THREE.CanvasTexture(canvas);
@@ -689,30 +689,64 @@ getElementFromPool(type) {
     adContainer.id = adId;
     adContainer.style.position = 'absolute';
     adContainer.style.left = '-9999px'; // Posicionado fora da tela, mas ainda renderizado
-    adContainer.style.width = '160px';
-    adContainer.style.height = '300px';
+    adContainer.style.width = '300px';  // Atualizado para corresponder ao tamanho do script
+    adContainer.style.height = '250px'; // Atualizado para corresponder ao tamanho do script
     document.body.appendChild(adContainer);
     
+    // Inserir o script diretamente no container
+    adContainer.innerHTML = `
+        <script type="text/javascript">
+            atOptions = {
+                'key' : '95fb140bab4ccd0ee7b676a70d8a176b',
+                'format' : 'iframe',
+                'height' : 250,
+                'width' : 300,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/95fb140bab4ccd0ee7b676a70d8a176b/invoke.js"></script>
+    `;
+    
+    // Alternativa: Carregar scripts programaticamente
+    // Esta é uma abordagem mais confiável para carregar scripts dinamicamente
+    const scriptOptions = document.createElement('script');
+    scriptOptions.type = 'text/javascript';
+    scriptOptions.text = `
+        atOptions = {
+            'key' : '95fb140bab4ccd0ee7b676a70d8a176b',
+            'format' : 'iframe',
+            'height' : 250,
+            'width' : 300,
+            'params' : {}
+        };
+    `;
+    adContainer.appendChild(scriptOptions);
+    
+    const scriptInvoke = document.createElement('script');
+    scriptInvoke.type = 'text/javascript';
+    scriptInvoke.src = '//www.highperformanceformat.com/95fb140bab4ccd0ee7b676a70d8a176b/invoke.js';
+    adContainer.appendChild(scriptInvoke);
+    
     // Determinar qual contêiner de anúncio usar (alternar entre IDs diferentes)
-    // Usamos uma lista de IDs de anúncios diferentes para cada outdoor
-    const adContainers = [
-        '77b1bce12bb32295e95d56f2b15cc16f', // ID 1
-        '6e6bb9df7507a0d6a72b690c1aa14d5d', // ID 2
-        '65448f5194b67ae3f2a2b3b7f8a8cfb3', // ID 3 
-        'fd3c7cbb71b5bfbc847fad17a4512362'  // ID 4
-    ];
+    // // Usamos uma lista de IDs de anúncios diferentes para cada outdoor
+    // const adContainers = [
+    //     '77b1bce12bb32295e95d56f2b15cc16f', // ID 1
+    //     '6e6bb9df7507a0d6a72b690c1aa14d5d', // ID 2
+    //     '65448f5194b67ae3f2a2b3b7f8a8cfb3', // ID 3 
+    //     'fd3c7cbb71b5bfbc847fad17a4512362'  // ID 4
+    // ];
     
-    // Escolher um ID de anúncio aleatório para cada outdoor
-    const randomAdIndex = Math.floor(Math.random() * adContainers.length);
-    const containerId = adContainers[randomAdIndex];
+    // // Escolher um ID de anúncio aleatório para cada outdoor
+    // const randomAdIndex = Math.floor(Math.random() * adContainers.length);
+    // const containerId = adContainers[randomAdIndex];
     
-    // Carregar o script de anúncio
-    loadAdScript(adId, 160, 300, containerId);
+    // // Carregar o script de anúncio original também (mantendo a funcionalidade existente)
+    // loadAdScript(adId, 300, 250, containerId);
     
     // Adicionar referência ao anúncio para poder removê-lo depois
     billboard.userData = {
         adId: adId,
-        containerId: containerId
+        containerId: '95fb140bab4ccd0ee7b676a70d8a176b'
     };
 
     // Adicionar a placa ao segmento

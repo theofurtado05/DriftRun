@@ -2,6 +2,7 @@
 
 const CONTAINER_AD_MOBILE = '328517141b0f7db7d7e8894b04486ac2'
 const CONTAINER_AD_DESKTOP = '026bd1fdc36b2ed8498e1cd5fb314697'
+const CONTAINER_BANNER_300x250 = '95fb140bab4ccd0ee7b676a70d8a176b'
 
 // Classe principal do jogo
 class Game {
